@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/Vitaly898/metricsCollector/internal/agent"
-	"go.avito.ru/gl/testreport/collector"
 )
 
 
