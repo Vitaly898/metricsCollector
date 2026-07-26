@@ -4,6 +4,7 @@
       "net/http"
       "net/http/httptest"
       "testing"
+      "github.com/go-chi/chi/v5"
   )
 
   type mockStorage struct {
@@ -25,6 +26,23 @@
   func (m *mockStorage) UpdateCounter(name string, value int64) {
       m.counterCalls[name] += value
   }
+  func (m *mockStorage) GetGauge(name string) (float64, bool) {
+	val, ok := m.gaugeCalls[name]
+	return val, ok
+}
+
+func (m *mockStorage) GetCounter(name string) (int64, bool) {
+	val, ok := m.counterCalls[name]
+	return val, ok
+}
+
+func (m *mockStorage) GetAllGauge() map[string]float64 {
+	return m.gaugeCalls
+}
+
+func (m *mockStorage) GetAllCounter() map[string]int64 {
+	return m.counterCalls
+}
 
   func TestUpdateHandler(t *testing.T) {
       type want struct {
@@ -109,13 +127,15 @@
 
       for _, tt := range tests {
           t.Run(tt.name, func(t *testing.T) {
-              mock := newMockStorage()
-              h := NewUpdateHandler(mock)
+            mock := newMockStorage()
+            h := NewUpdateHandler(mock)
+            r := chi.NewRouter()
+            r.Post("/update/{type}/{name}/{value}", h.ServeHTTP)
 
-              req := httptest.NewRequest(tt.method, tt.url, nil)
-              w := httptest.NewRecorder()
+            req := httptest.NewRequest(tt.method, tt.url, nil)
+            w := httptest.NewRecorder()
 
-              h.ServeHTTP(w, req)
+            r.ServeHTTP(w, req)
 
               res := w.Result()
               defer res.Body.Close()

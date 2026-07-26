@@ -3,8 +3,10 @@ package handler
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
+	"github.com/go-chi/chi/v5"
+
+	models "github.com/Vitaly898/metricsCollector/internal/model"
 	"github.com/Vitaly898/metricsCollector/internal/storage"
 )
 
@@ -15,46 +17,35 @@ type UpdateHandler struct {
 func NewUpdateHandler(s storage.MetricsStorage) *UpdateHandler {
 	return &UpdateHandler{storage: s}
 }
-func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-	path := strings.Trim(r.URL.Path, "/")
-	parts := strings.Split(path, "/")
 
-	if (len(parts)) != 4 {
+func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	metricType := chi.URLParam(r, "type")
+	metricName := chi.URLParam(r, "name")
+	metricValue := chi.URLParam(r, "value")
+		if metricName == "" {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	if parts[1] != "counter" && parts[1] != "gauge" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if parts[2] == "" {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	metric := parts[1]
-	metricName := parts[2]
-	metricValue := parts[3]
-	switch metric {
-	case "counter":
+
+	switch metricType {
+	case models.Counter:
 		met, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		h.storage.UpdateCounter(metricName, met)
-	case "gauge":
+	case models.Gauge:
 		met, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		h.storage.UpdateGauge(metricName, met)
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-
 }
