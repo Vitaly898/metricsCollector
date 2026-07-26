@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,6 +11,8 @@ import (
 )
 
 func main() {
+	addr:= flag.String("a","localhost:8080","адрес сервера")
+	flag.Parse()
 	memStorage := storage.NewMemStorage()
 	updateHandler := handler.NewUpdateHandler(memStorage)
 	valueHandler := handler.NewValueHandler(memStorage)
@@ -20,7 +23,7 @@ func main() {
 	r.Get("/value/{type}/{name}", valueHandler.ServeHTTP)
 	r.Get("/", indexHandler.ServeHTTP)
 
-	err := http.ListenAndServe(`:8080`, r)
+	err := http.ListenAndServe(*addr, r)
 	if err != nil {
 		panic(err)
 	}
