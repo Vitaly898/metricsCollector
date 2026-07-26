@@ -48,5 +48,5 @@ func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
 	for metric, val := range gauges {
 		s.SendMetric(models.Gauge, metric, strconv.FormatFloat(val, 'f', -1, 64))
 	}
-	s.SendMetric(models.Gauge, "PollCount", strconv.FormatInt(pollCount, 10))
+	s.SendMetric(models.Counter, "PollCount", strconv.FormatInt(pollCount, 10))
 }
