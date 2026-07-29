@@ -22,7 +22,11 @@ func TestUpdateGauge(t *testing.T) {
 			for _, v := range tt.values {
 				s.UpdateGauge("Alloc", v)
 			}
-			if got := s.gauge["Alloc"]; got != tt.want {
+			got,ok := s.GetGauge("Alloc");
+			if !ok{
+				t.Errorf("Метрика не найдена")
+			}
+			if  got != tt.want {
 				t.Errorf("Тест упал %v не равен %v", got, tt.want)
 			}
 		})
@@ -47,7 +51,11 @@ func TestUpdateCounter(t *testing.T) {
 			for _, v := range tt.values {
 				s.UpdateCounter("PollCount", v)
 			}
-			if got := s.counter["PollCount"]; got != tt.want {
+			got,ok := s.GetCounter("PollCount")
+			if !ok{
+				t.Errorf("Метрика не найдена")
+			}
+			if ; got != tt.want {
 				t.Errorf("Тест упал счетчик метрики не верный")
 			}
 		})

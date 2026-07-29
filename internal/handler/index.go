@@ -3,26 +3,36 @@ package handler
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/Vitaly898/metricsCollector/internal/storage"
+	"html/template"
 )
 
 type IndexHandler struct {
-	storage storage.MetricsStorage
+	storage MetricsStorage
 }
 
-func NewIndexHandler(s storage.MetricsStorage) *IndexHandler{
+func NewIndexHandler(s MetricsStorage) *IndexHandler{
 	return  &IndexHandler{storage: s}
 }
-func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
-	w.Header().Set("Content-Type","text/html;charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w,"<html><body><ul>")
+type metric struct{
+	Name string
+	Value string
+}
+
+var indexTmpl = template.Must(template.New("index").Parse(      `<html><body><ul>
+  {{range .}}<li>{{.Name}}: {{.Value}}</li>
+  {{end}}</ul></body></html>`))
+
+  func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request){
+	metrics := make([]metric,0)
 	for name,val := range h.storage.GetAllGauge(){
-		fmt.Fprintf(w,"<li>%s: %v</li>\n",name,val)
+		metrics = append(metrics, metric{Name:name, Value: fmt.Sprintf("%v",val)} )
 	}
 	for name,val := range h.storage.GetAllCounter(){
-		fmt.Fprintf(w,"<li>%s: %v</li>\n",name,val)
+		metrics = append(metrics, metric{Name:name, Value: fmt.Sprintf("%v",val)})
 	}
-	fmt.Fprintf(w,"</ul></body></html>")
+	      w.Header().Set("Content-Type", "text/html;charset=utf-8")
+      w.WriteHeader(http.StatusOK)
+      if err := indexTmpl.Execute(w, metrics); err != nil {
+          http.Error(w, err.Error(), http.StatusInternalServerError)
+      }
 }

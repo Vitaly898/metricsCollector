@@ -2,7 +2,6 @@ package handler
 
 
 import(
-	"github.com/Vitaly898/metricsCollector/internal/storage"
 	"net/http"
 	"strconv"
 	models "github.com/Vitaly898/metricsCollector/internal/model"
@@ -11,10 +10,10 @@ import(
 
 
 type ValueHandler struct {
-	storage storage.MetricsStorage
+	storage MetricsStorage
 }
 
-func NewValueHandler(s storage.MetricsStorage) *ValueHandler{
+func NewValueHandler(s MetricsStorage) *ValueHandler{
 	return &ValueHandler{storage:s}
 }
 

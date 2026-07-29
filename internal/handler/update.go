@@ -7,14 +7,13 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	models "github.com/Vitaly898/metricsCollector/internal/model"
-	"github.com/Vitaly898/metricsCollector/internal/storage"
 )
 
 type UpdateHandler struct {
-	storage storage.MetricsStorage
+	storage MetricsStorage
 }
 
-func NewUpdateHandler(s storage.MetricsStorage) *UpdateHandler {
+func NewUpdateHandler(s MetricsStorage) *UpdateHandler {
 	return &UpdateHandler{storage: s}
 }
 
