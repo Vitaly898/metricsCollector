@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +26,6 @@ func main() {
 
 	err := http.ListenAndServe(*addr, r)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Сервер не запустить сервер %v",err)
 	}
 }
