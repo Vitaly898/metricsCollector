@@ -1,4 +1,4 @@
-package middleware
+package logger
 
 import (
 	"net/http"
@@ -31,7 +31,7 @@ func (w *loggingResponseWriter) WriteHeader(statusCode int) {
 	w.responseData.status = statusCode
 }
 
-// Logger возвращает middleware, логирующий сведения о запросах и ответах:
+// Logger возвращает logger, логирующий сведения о запросах и ответах:
 // URI, метод, длительность выполнения, код статуса и размер ответа.
 func Logger(logger *zap.SugaredLogger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
