@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 
 	"github.com/Vitaly898/metricsCollector/internal/config"
 	"github.com/Vitaly898/metricsCollector/internal/handler"
+	"github.com/Vitaly898/metricsCollector/internal/middleware"
 )
 
 type Server struct {
@@ -14,7 +16,13 @@ type Server struct {
 }
 
 func New(cfg config.Config, store handler.MetricsStorage) *Server {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+
 	r := chi.NewRouter()
+	r.Use(middleware.Logger(logger.Sugar()))
 
 	r.Post("/update/{type}/{name}/{value}", handler.NewUpdateHandler(store).ServeHTTP)
 	r.Get("/value/{type}/{name}", handler.NewValueHandler(store).ServeHTTP)
