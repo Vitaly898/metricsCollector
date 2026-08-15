@@ -1,12 +1,12 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	models "github.com/Vitaly898/metricsCollector/internal/model"
 	"log"
 	"net/http"
-	"strconv"
-
-	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
 type Sender struct {
@@ -22,25 +22,28 @@ func NewSender(baseUrl string) *Sender {
 	}
 }
 
-func (s *Sender) sendMetric(metricType string, metric string, val string) bool {
-	url := fmt.Sprintf("%s/update/%s/%s/%s", s.baseUrl, metricType, metric, val)
+func (s *Sender) sendMetric(m models.Metrics) bool {
+	url := fmt.Sprintf("%s/update", s.baseUrl)
 
-	req, err := http.NewRequest(http.MethodPost, url, nil)
+	body, err := json.Marshal(m)
 	if err != nil {
-		log.Printf("Cannot create request %v", err)
+		log.Printf("Cannor marshal metrics: %v", err)
 		return false
 	}
-	req.Header.Set("Content-Type", "text/plain")
-
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		log.Printf("Cannor create request: %v", err)
+		return false
+	}
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := s.client.Do(req)
 	if err != nil {
-		log.Printf("Server problem %v", err)
+		log.Printf("Cannor send request: %v", err)
 		return false
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Server response status code is not 200 %d", resp.StatusCode)
+		log.Printf("Response status is not 200: %v", resp.StatusCode)
 		return false
 	}
 
@@ -57,15 +60,22 @@ func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
 
 	allOk := true
 	for metric, val := range gauges {
-		if !s.sendMetric(models.Gauge, metric, strconv.FormatFloat(val, 'f', -1, 64)) {
+		v := val
+		if !s.sendMetric(models.Metrics{
+			ID:    metric,
+			MType: models.Gauge,
+			Value: &v,
+		}) {
 			allOk = false
 		}
 	}
-
-	if !s.sendMetric(models.Counter, "PollCount", strconv.FormatInt(delta, 10)) {
+	if !s.sendMetric(models.Metrics{
+		ID:    "PollCount",
+		MType: models.Counter,
+		Delta: &delta,
+	}) {
 		allOk = false
 	}
-
 	if allOk {
 		s.lastPollCount += delta
 	}
