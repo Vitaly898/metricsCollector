@@ -10,9 +10,9 @@ import (
 )
 
 func main() {
-	addr := flag.String("a", "localhost:8080", "адрес сервера")
-	reportInterval := flag.Int("r", 10, "частота отправки метрик в секундах")
-	pollInterval := flag.Int("p", 2, "частота опроса метрик в секундах")
+	addr := flag.String("a", "localhost:8080", "server address")
+	reportInterval := flag.Int("r", 10, "metrics sending interval in seconds")
+	pollInterval := flag.Int("p", 2, "metrics polling interval in seconds")
 	flag.Parse()
 	if envAddr := os.Getenv("ADDRESS"); envAddr != "" {
 		*addr = envAddr

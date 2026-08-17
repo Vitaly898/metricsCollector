@@ -34,7 +34,7 @@ func (h *UpdateJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		h.storage.UpdateCounter(m.ID, *m.Delta)
-		// Возвращаем накопленное значение counter, а не присланную дельту.
+
 		v, _ := h.storage.GetCounter(m.ID)
 		*m.Delta = v
 	case models.Gauge:

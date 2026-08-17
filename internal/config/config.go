@@ -11,10 +11,9 @@ type Config struct {
 
 func Parse() Config {
 	var cfg Config
-	flag.StringVar(&cfg.Addr, "a", "localhost:8080", "адрес сервера")
+	flag.StringVar(&cfg.Addr, "a", "localhost:8080", "server address")
 	flag.Parse()
 
-	// Переменная окружения имеет приоритет над флагом
 	if envAddr := os.Getenv("ADDRESS"); envAddr != "" {
 		cfg.Addr = envAddr
 	}

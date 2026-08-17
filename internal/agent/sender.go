@@ -28,19 +28,19 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 
 	body, err := json.Marshal(m)
 	if err != nil {
-		log.Printf("Cannor marshal metrics: %v", err)
+		log.Printf("Cannot marshal metric: %v", err)
 		return false
 	}
 
 	compressed, err := compress(body)
 	if err != nil {
-		log.Printf("Cannor compress metrics: %v", err)
+		log.Printf("Cannot compress metric: %v", err)
 		return false
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressed))
 	if err != nil {
-		log.Printf("Cannor create request: %v", err)
+		log.Printf("Cannot create request: %v", err)
 		return false
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -48,7 +48,7 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 	req.Header.Set("Accept-Encoding", "gzip")
 	resp, err := s.client.Do(req)
 	if err != nil {
-		log.Printf("Cannor send request: %v", err)
+		log.Printf("Cannot send request: %v", err)
 		return false
 	}
 	defer resp.Body.Close()
@@ -76,8 +76,7 @@ func compress(data []byte) ([]byte, error) {
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
 	delta := pollCount - s.lastPollCount
 	if delta < 0 {
-		// Счетчик сбросился (например, агент перезапустился).
-		// Отправляем абсолютное накопленное значение с нового старта.
+
 		delta = pollCount
 	}
 

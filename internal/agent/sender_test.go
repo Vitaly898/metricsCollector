@@ -180,7 +180,6 @@ func TestSenderSendsPollCountDelta(t *testing.T) {
 	}
 	mu.Unlock()
 
-	// Имитируем перезапуск агента: новый Sender.
 	newSender := NewSender(server.URL)
 	newSender.Send(map[string]float64{"Alloc": 3}, 2)
 	mu.Lock()
