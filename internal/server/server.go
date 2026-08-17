@@ -29,7 +29,9 @@ func New(cfg config.Config, store handler.MetricsStorage) *Server {
 	r.Get("/", handler.NewIndexHandler(store).ServeHTTP)
 
 	r.Post("/update", handler.NewUpdateJSONHandler(store).ServeHTTP)
+	r.Post("/update/", handler.NewUpdateJSONHandler(store).ServeHTTP)
 	r.Post("/value", handler.NewValueJSONHandler(store).ServeHTTP)
+	r.Post("/value/", handler.NewValueJSONHandler(store).ServeHTTP)
 
 	return &Server{
 		httpServer: &http.Server{

@@ -28,7 +28,7 @@ func main() {
 		}
 	}
 	collector := agent.NewCollector()
-	sender := agent.NewSender("https://" + *addr)
+	sender := agent.NewSender("http://" + *addr)
 	a := agent.NewAgent(collector, sender, time.Duration(*pollInterval)*time.Second, time.Duration(*reportInterval)*time.Second)
 	a.Run()
 
