@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,18 @@ func TestAgentRunSendsMetrics(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var m models.Metrics
-		if err := json.NewDecoder(r.Body).Decode(&m); err == nil {
+		body := r.Body
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			gz, err := gzip.NewReader(r.Body)
+			if err != nil {
+				t.Errorf("cannot create gzip reader: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			defer gz.Close()
+			body = gz
+		}
+		if err := json.NewDecoder(body).Decode(&m); err == nil {
 			mu.Lock()
 			metrics = append(metrics, m)
 			mu.Unlock()

@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	models "github.com/Vitaly898/metricsCollector/internal/model"
@@ -30,12 +31,21 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 		log.Printf("Cannor marshal metrics: %v", err)
 		return false
 	}
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+
+	compressed, err := compress(body)
+	if err != nil {
+		log.Printf("Cannor compress metrics: %v", err)
+		return false
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressed))
 	if err != nil {
 		log.Printf("Cannor create request: %v", err)
 		return false
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Accept-Encoding", "gzip")
 	resp, err := s.client.Do(req)
 	if err != nil {
 		log.Printf("Cannor send request: %v", err)
@@ -48,6 +58,19 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 	}
 
 	return true
+}
+
+func compress(data []byte) ([]byte, error) {
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
+	if _, err := w.Write(data); err != nil {
+		_ = w.Close()
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
 }
 
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {

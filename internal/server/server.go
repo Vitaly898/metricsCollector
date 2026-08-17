@@ -9,6 +9,7 @@ import (
 	"github.com/Vitaly898/metricsCollector/internal/config"
 	"github.com/Vitaly898/metricsCollector/internal/handler"
 	"github.com/Vitaly898/metricsCollector/internal/logger"
+	"github.com/Vitaly898/metricsCollector/internal/middleware"
 )
 
 type Server struct {
@@ -23,6 +24,7 @@ func New(cfg config.Config, store handler.MetricsStorage) *Server {
 
 	r := chi.NewRouter()
 	r.Use(logger.Logger(zapLogger.Sugar()))
+	r.Use(middleware.GzipMiddleware)
 
 	r.Post("/update/{type}/{name}/{value}", handler.NewUpdateHandler(store).ServeHTTP)
 	r.Get("/value/{type}/{name}", handler.NewValueHandler(store).ServeHTTP)

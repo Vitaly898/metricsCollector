@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -14,19 +15,30 @@ type recordedRequest struct {
 	method      string
 	path        string
 	contentType string
+	encoding    string
 	metric      models.Metrics
 }
 
 func recordRequest(t *testing.T, r *http.Request) recordedRequest {
 	t.Helper()
+	body := r.Body
+	if r.Header.Get("Content-Encoding") == "gzip" {
+		gz, err := gzip.NewReader(r.Body)
+		if err != nil {
+			t.Fatalf("cannot create gzip reader: %v", err)
+		}
+		defer gz.Close()
+		body = gz
+	}
 	var m models.Metrics
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+	if err := json.NewDecoder(body).Decode(&m); err != nil {
 		t.Errorf("cannot decode request body: %v", err)
 	}
 	return recordedRequest{
 		method:      r.Method,
 		path:        r.URL.Path,
 		contentType: r.Header.Get("Content-Type"),
+		encoding:    r.Header.Get("Content-Encoding"),
 		metric:      m,
 	}
 }
@@ -64,6 +76,9 @@ func TestSenderSendsGaugeRequest(t *testing.T) {
 	}
 	if gauge.contentType != "application/json" {
 		t.Errorf("gauge Content-Type = %q, want application/json", gauge.contentType)
+	}
+	if gauge.encoding != "gzip" {
+		t.Errorf("gauge Content-Encoding = %q, want gzip", gauge.encoding)
 	}
 	if gauge.metric.ID != "Alloc" || gauge.metric.MType != models.Gauge {
 		t.Errorf("gauge metric = %+v, want id=Alloc type=gauge", gauge.metric)
@@ -107,6 +122,9 @@ func TestSenderSendsCounterRequest(t *testing.T) {
 	if counter.contentType != "application/json" {
 		t.Errorf("counter Content-Type = %q, want application/json", counter.contentType)
 	}
+	if counter.encoding != "gzip" {
+		t.Errorf("counter Content-Encoding = %q, want gzip", counter.encoding)
+	}
 	if counter.metric.ID != "PollCount" || counter.metric.MType != models.Counter {
 		t.Errorf("counter metric = %+v, want id=PollCount type=counter", counter.metric)
 	}
@@ -121,7 +139,18 @@ func TestSenderSendsPollCountDelta(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var m models.Metrics
-		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+		body := r.Body
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			gz, err := gzip.NewReader(r.Body)
+			if err != nil {
+				t.Errorf("cannot create gzip reader: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			defer gz.Close()
+			body = gz
+		}
+		if err := json.NewDecoder(body).Decode(&m); err != nil {
 			t.Errorf("cannot decode request body: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
