@@ -10,6 +10,7 @@ type Agent struct {
 	pollInterval time.Duration
 	sendInterval time.Duration
 	stop         chan struct{}
+	done         chan struct{}
 }
 
 func NewAgent(c *Collector, s *Sender, pollInterval, sendInterval time.Duration) *Agent {
@@ -19,10 +20,12 @@ func NewAgent(c *Collector, s *Sender, pollInterval, sendInterval time.Duration)
 		pollInterval: pollInterval,
 		sendInterval: sendInterval,
 		stop:         make(chan struct{}),
+		done:         make(chan struct{}),
 	}
 }
 
 func (a *Agent) Run() {
+	defer close(a.done)
 	polls := 0
 	for {
 		select {
@@ -49,4 +52,5 @@ func (a *Agent) Run() {
 
 func (a *Agent) Stop() {
 	close(a.stop)
+	<-a.done
 }
