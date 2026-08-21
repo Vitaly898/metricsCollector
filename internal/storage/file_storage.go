@@ -2,34 +2,45 @@ package storage
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"time"
+
+	"go.uber.org/zap"
+
+	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
+
+var logger = zap.Must(zap.NewProduction()).Sugar()
 
 type FileStorage struct {
 	*MemStorage
 	filePath      string
-	storeInterval int
+	storeInterval time.Duration
 	stop          chan struct{}
 	done          chan struct{}
 }
 
-func NewFileStorage(mem *MemStorage, filePath string, storeInterval int) *FileStorage {
-	return &FileStorage{
+func NewFileStorage(mem *MemStorage, filePath string, storeInterval int, restore bool) *FileStorage {
+	fs := &FileStorage{
 		MemStorage:    mem,
 		filePath:      filePath,
-		storeInterval: storeInterval,
+		storeInterval: time.Duration(storeInterval) * time.Second,
 		stop:          make(chan struct{}),
 		done:          make(chan struct{}),
 	}
+	if restore {
+		if err := fs.Load(); err != nil {
+			logger.Errorw("Failed to load metrics", "error", err)
+		}
+	}
+	return fs
 }
 
 func (fs *FileStorage) UpdateGauge(name string, val float64) {
 	fs.MemStorage.UpdateGauge(name, val)
 	if fs.storeInterval == 0 {
 		if err := fs.Save(); err != nil {
-			log.Printf("Failed to save metrics: %v", err)
+			logger.Errorw("Failed to save metrics", "error", err)
 		}
 	}
 }
@@ -38,7 +49,7 @@ func (fs *FileStorage) UpdateCounter(name string, val int64) {
 	fs.MemStorage.UpdateCounter(name, val)
 	if fs.storeInterval == 0 {
 		if err := fs.Save(); err != nil {
-			log.Printf("Failed to save metrics: %v", err)
+			logger.Errorw("Failed to save metrics", "error", err)
 		}
 	}
 }
@@ -70,12 +81,7 @@ func (fs *FileStorage) Load() error {
 		return err
 	}
 
-	var metrics []struct {
-		ID    string   `json:"id"`
-		MType string   `json:"type"`
-		Delta *int64   `json:"delta,omitempty"`
-		Value *float64 `json:"value,omitempty"`
-	}
+	var metrics []models.Metrics
 
 	if err := json.Unmarshal(data, &metrics); err != nil {
 		return err
@@ -85,11 +91,11 @@ func (fs *FileStorage) Load() error {
 	defer fs.mu.Unlock()
 	for _, m := range metrics {
 		switch m.MType {
-		case "gauge":
+		case models.Gauge:
 			if m.Value != nil {
 				fs.gauge[m.ID] = *m.Value
 			}
-		case "counter":
+		case models.Counter:
 			if m.Delta != nil {
 				fs.counter[m.ID] = *m.Delta
 			}
@@ -108,18 +114,18 @@ func (fs *FileStorage) Start() {
 
 func (fs *FileStorage) saver() {
 	defer close(fs.done)
-	ticker := time.NewTicker(time.Duration(fs.storeInterval) * time.Second)
+	ticker := time.NewTicker(fs.storeInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-fs.stop:
 			if err := fs.Save(); err != nil {
-				log.Printf("Failed to save metrics: %v", err)
+				logger.Errorw("Failed to save metrics", "error", err)
 			}
 			return
 		case <-ticker.C:
 			if err := fs.Save(); err != nil {
-				log.Printf("Failed to save metrics: %v", err)
+				logger.Errorw("Failed to save metrics", "error", err)
 			}
 		}
 	}

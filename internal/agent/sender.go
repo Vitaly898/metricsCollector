@@ -2,13 +2,17 @@ package agent
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	models "github.com/Vitaly898/metricsCollector/internal/model"
-	"log"
 	"net/http"
+
+	"go.uber.org/zap"
+
+	"github.com/Vitaly898/metricsCollector/internal/compress"
+	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
+
+var logger = zap.Must(zap.NewProduction()).Sugar()
 
 type Sender struct {
 	baseUrl       string
@@ -28,19 +32,19 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 
 	body, err := json.Marshal(m)
 	if err != nil {
-		log.Printf("Cannot marshal metric: %v", err)
+		logger.Errorw("Cannot marshal metric", "error", err)
 		return false
 	}
 
-	compressed, err := compress(body)
+	compressed, err := compress.Compress(body)
 	if err != nil {
-		log.Printf("Cannot compress metric: %v", err)
+		logger.Errorw("Cannot compress metric", "error", err)
 		return false
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressed))
 	if err != nil {
-		log.Printf("Cannot create request: %v", err)
+		logger.Errorw("Cannot create request", "error", err)
 		return false
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -48,29 +52,16 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 	req.Header.Set("Accept-Encoding", "gzip")
 	resp, err := s.client.Do(req)
 	if err != nil {
-		log.Printf("Cannot send request: %v", err)
+		logger.Errorw("Cannot send request", "error", err)
 		return false
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Response status is not 200: %v", resp.StatusCode)
+		logger.Errorw("Response status is not 200", "status", resp.StatusCode)
 		return false
 	}
 
 	return true
-}
-
-func compress(data []byte) ([]byte, error) {
-	var b bytes.Buffer
-	w := gzip.NewWriter(&b)
-	if _, err := w.Write(data); err != nil {
-		_ = w.Close()
-		return nil, err
-	}
-	if err := w.Close(); err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
 }
 
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {

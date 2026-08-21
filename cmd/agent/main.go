@@ -14,15 +14,15 @@ func main() {
 	reportInterval := flag.Int("r", 10, "metrics sending interval in seconds")
 	pollInterval := flag.Int("p", 2, "metrics polling interval in seconds")
 	flag.Parse()
-	if envAddr := os.Getenv("ADDRESS"); envAddr != "" {
+	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
 		*addr = envAddr
 	}
-	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
+	if envReportInterval, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
 		if v, err := strconv.Atoi(envReportInterval); err == nil {
 			*reportInterval = v
 		}
 	}
-	if envPollInterval := os.Getenv("POLL_INTERVAL"); envPollInterval != "" {
+	if envPollInterval, ok := os.LookupEnv("POLL_INTERVAL"); ok {
 		if v, err := strconv.Atoi(envPollInterval); err == nil {
 			*pollInterval = v
 		}

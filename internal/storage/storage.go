@@ -85,20 +85,3 @@ func (m *MemStorage) getAllMetricsLocked() []models.Metrics {
 	}
 	return metrics
 }
-
-func (m *MemStorage) restoreMetrics(metrics []models.Metrics) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for _, metric := range metrics {
-		switch metric.MType {
-		case models.Gauge:
-			if metric.Value != nil {
-				m.gauge[metric.ID] = *metric.Value
-			}
-		case models.Counter:
-			if metric.Delta != nil {
-				m.counter[metric.ID] = *metric.Delta
-			}
-		}
-	}
-}

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -31,9 +32,12 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for name, val := range h.storage.GetAllCounter() {
 		metrics = append(metrics, metric{Name: name, Value: fmt.Sprintf("%v", val)})
 	}
+	var buf bytes.Buffer
+	if err := indexTmpl.Execute(&buf, metrics); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html;charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	if err := indexTmpl.Execute(w, metrics); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	_, _ = w.Write(buf.Bytes())
 }

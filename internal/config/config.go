@@ -22,18 +22,18 @@ func Parse() Config {
 	fs.BoolVar(&cfg.Restore, "r", true, "restore metrics from file on startup")
 	_ = fs.Parse(os.Args[1:])
 
-	if envAddr := os.Getenv("ADDRESS"); envAddr != "" {
+	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
 		cfg.Addr = envAddr
 	}
-	if envInterval := os.Getenv("STORE_INTERVAL"); envInterval != "" {
+	if envInterval, ok := os.LookupEnv("STORE_INTERVAL"); ok {
 		if v, err := strconv.Atoi(envInterval); err == nil {
 			cfg.StoreInterval = v
 		}
 	}
-	if envPath := os.Getenv("FILE_STORAGE_PATH"); envPath != "" {
+	if envPath, ok := os.LookupEnv("FILE_STORAGE_PATH"); ok {
 		cfg.FileStoragePath = envPath
 	}
-	if envRestore := os.Getenv("RESTORE"); envRestore != "" {
+	if envRestore, ok := os.LookupEnv("RESTORE"); ok {
 		if v, err := strconv.ParseBool(envRestore); err == nil {
 			cfg.Restore = v
 		}

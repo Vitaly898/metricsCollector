@@ -17,12 +17,7 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func New(cfg config.Config, store handler.MetricsStorage) *Server {
-	zapLogger, err := zap.NewProduction()
-	if err != nil {
-		panic(err)
-	}
-
+func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger) *Server {
 	r := chi.NewRouter()
 	r.Use(logger.Logger(zapLogger.Sugar()))
 	r.Use(middleware.GzipMiddleware)

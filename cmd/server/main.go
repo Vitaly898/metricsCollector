@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/Vitaly898/metricsCollector/internal/config"
 	"github.com/Vitaly898/metricsCollector/internal/server"
@@ -15,22 +16,23 @@ import (
 )
 
 func main() {
+	zapLogger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = zapLogger.Sync() }()
+
 	cfg := config.Parse()
 
 	memStorage := storage.NewMemStorage()
-	fileStorage := storage.NewFileStorage(memStorage, cfg.FileStoragePath, cfg.StoreInterval)
-	if cfg.Restore {
-		if err := fileStorage.Load(); err != nil {
-			log.Printf("Failed to load metrics: %v", err)
-		}
-	}
+	fileStorage := storage.NewFileStorage(memStorage, cfg.FileStoragePath, cfg.StoreInterval, cfg.Restore)
 	fileStorage.Start()
 
-	srv := server.New(cfg, fileStorage)
+	srv := server.New(cfg, fileStorage, zapLogger)
 
 	go func() {
 		if err := srv.Run(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Failed to start server: %v", err)
+			zapLogger.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
 
@@ -42,7 +44,7 @@ func main() {
 	defer cancel()
 
 	if err := srv.Stop(ctx); err != nil {
-		log.Printf("Failed to shutdown server: %v", err)
+		zapLogger.Error("Failed to shutdown server", zap.Error(err))
 	}
 	fileStorage.Stop()
 }

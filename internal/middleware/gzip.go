@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/Vitaly898/metricsCollector/internal/compress"
 )
 
 type compressWriter struct {
@@ -33,7 +35,7 @@ func (c *compressWriter) WriteHeader(statusCode int) {
 		c.compress = true
 		c.w.Header().Set("Content-Encoding", "gzip")
 		c.w.Header().Del("Content-Length")
-		c.zw = gzip.NewWriter(c.w)
+		c.zw = compress.NewWriter(c.w)
 	}
 	c.w.WriteHeader(statusCode)
 }
@@ -61,7 +63,7 @@ type compressReader struct {
 }
 
 func newCompressReader(r io.ReadCloser) (*compressReader, error) {
-	zr, err := gzip.NewReader(r)
+	zr, err := compress.NewReader(r)
 	if err != nil {
 		return nil, err
 	}
