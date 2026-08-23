@@ -1,13 +1,18 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"strconv"
 
+	"go.uber.org/zap"
+
+	"github.com/Vitaly898/metricsCollector/internal/compress"
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
+
+var logger = zap.Must(zap.NewProduction()).Sugar()
 
 type Sender struct {
 	baseUrl       string
@@ -22,25 +27,37 @@ func NewSender(baseUrl string) *Sender {
 	}
 }
 
-func (s *Sender) sendMetric(metricType string, metric string, val string) bool {
-	url := fmt.Sprintf("%s/update/%s/%s/%s", s.baseUrl, metricType, metric, val)
+func (s *Sender) sendMetric(m models.Metrics) bool {
+	url := fmt.Sprintf("%s/update", s.baseUrl)
 
-	req, err := http.NewRequest(http.MethodPost, url, nil)
+	body, err := json.Marshal(m)
 	if err != nil {
-		log.Printf("Cannot create request %v", err)
+		logger.Errorw("Cannot marshal metric", "error", err)
 		return false
 	}
-	req.Header.Set("Content-Type", "text/plain")
 
+	compressed, err := compress.Compress(body)
+	if err != nil {
+		logger.Errorw("Cannot compress metric", "error", err)
+		return false
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressed))
+	if err != nil {
+		logger.Errorw("Cannot create request", "error", err)
+		return false
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Accept-Encoding", "gzip")
 	resp, err := s.client.Do(req)
 	if err != nil {
-		log.Printf("Server problem %v", err)
+		logger.Errorw("Cannot send request", "error", err)
 		return false
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Server response status code is not 200 %d", resp.StatusCode)
+		logger.Errorw("Response status is not 200", "status", resp.StatusCode)
 		return false
 	}
 
@@ -50,22 +67,28 @@ func (s *Sender) sendMetric(metricType string, metric string, val string) bool {
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
 	delta := pollCount - s.lastPollCount
 	if delta < 0 {
-		// Счетчик сбросился (например, агент перезапустился).
-		// Отправляем абсолютное накопленное значение с нового старта.
+
 		delta = pollCount
 	}
 
 	allOk := true
 	for metric, val := range gauges {
-		if !s.sendMetric(models.Gauge, metric, strconv.FormatFloat(val, 'f', -1, 64)) {
+		v := val
+		if !s.sendMetric(models.Metrics{
+			ID:    metric,
+			MType: models.Gauge,
+			Value: &v,
+		}) {
 			allOk = false
 		}
 	}
-
-	if !s.sendMetric(models.Counter, "PollCount", strconv.FormatInt(delta, 10)) {
+	if !s.sendMetric(models.Metrics{
+		ID:    "PollCount",
+		MType: models.Counter,
+		Delta: &delta,
+	}) {
 		allOk = false
 	}
-
 	if allOk {
 		s.lastPollCount += delta
 	}

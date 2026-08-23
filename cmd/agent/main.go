@@ -10,25 +10,25 @@ import (
 )
 
 func main() {
-	addr := flag.String("a", "localhost:8080", "адрес сервера")
-	reportInterval := flag.Int("r", 10, "частота отправки метрик в секундах")
-	pollInterval := flag.Int("p", 2, "частота опроса метрик в секундах")
+	addr := flag.String("a", "localhost:8080", "server address")
+	reportInterval := flag.Int("r", 10, "metrics sending interval in seconds")
+	pollInterval := flag.Int("p", 2, "metrics polling interval in seconds")
 	flag.Parse()
-	if envAddr := os.Getenv("ADDRESS"); envAddr != "" {
+	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
 		*addr = envAddr
 	}
-	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
+	if envReportInterval, ok := os.LookupEnv("REPORT_INTERVAL"); ok {
 		if v, err := strconv.Atoi(envReportInterval); err == nil {
 			*reportInterval = v
 		}
 	}
-	if envPollInterval := os.Getenv("POLL_INTERVAL"); envPollInterval != "" {
+	if envPollInterval, ok := os.LookupEnv("POLL_INTERVAL"); ok {
 		if v, err := strconv.Atoi(envPollInterval); err == nil {
 			*pollInterval = v
 		}
 	}
 	collector := agent.NewCollector()
-	sender := agent.NewSender("https://" + *addr)
+	sender := agent.NewSender("http://" + *addr)
 	a := agent.NewAgent(collector, sender, time.Duration(*pollInterval)*time.Second, time.Duration(*reportInterval)*time.Second)
 	a.Run()
 

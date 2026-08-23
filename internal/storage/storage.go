@@ -1,6 +1,10 @@
 package storage
 
-import "sync"
+import (
+	"sync"
+
+	models "github.com/Vitaly898/metricsCollector/internal/model"
+)
 
 type MemStorage struct {
 	mu      sync.Mutex
@@ -59,4 +63,25 @@ func (m *MemStorage) GetAllCounter() map[string]int64 {
 		res[k] = v
 	}
 	return res
+}
+
+func (m *MemStorage) getAllMetricsLocked() []models.Metrics {
+	metrics := make([]models.Metrics, 0, len(m.gauge)+len(m.counter))
+	for name, val := range m.gauge {
+		v := val
+		metrics = append(metrics, models.Metrics{
+			ID:    name,
+			MType: models.Gauge,
+			Value: &v,
+		})
+	}
+	for name, val := range m.counter {
+		v := val
+		metrics = append(metrics, models.Metrics{
+			ID:    name,
+			MType: models.Counter,
+			Delta: &v,
+		})
+	}
+	return metrics
 }

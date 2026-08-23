@@ -10,10 +10,10 @@ func TestUpdateGauge(t *testing.T) {
 		values []float64
 		want   float64
 	}{
-		{name: "позитивный кейс- обновление метрики один вызов", values: []float64{3.1}, want: 3.1},
-		{name: "позитивный кейс- обновление метрики два вызова", values: []float64{3.1, 5.5}, want: 5.5},
-		{name: "позитивный кейс- обновление метрики два вызова", values: []float64{0}, want: 0},
-		{name: "позитивный кейс- обновление метрики два вызова", values: []float64{-100.0}, want: -100},
+		{name: "positive case: single gauge update", values: []float64{3.1}, want: 3.1},
+		{name: "positive case: two gauge updates", values: []float64{3.1, 5.5}, want: 5.5},
+		{name: "positive case: gauge value zero", values: []float64{0}, want: 0},
+		{name: "positive case: negative gauge value", values: []float64{-100.0}, want: -100},
 	}
 
 	for _, tt := range tests {
@@ -22,12 +22,12 @@ func TestUpdateGauge(t *testing.T) {
 			for _, v := range tt.values {
 				s.UpdateGauge("Alloc", v)
 			}
-			got,ok := s.GetGauge("Alloc");
-			if !ok{
-				t.Errorf("Метрика не найдена")
+			got, ok := s.GetGauge("Alloc")
+			if !ok {
+				t.Errorf("Metric not found")
 			}
-			if  got != tt.want {
-				t.Errorf("Тест упал %v не равен %v", got, tt.want)
+			if got != tt.want {
+				t.Errorf("Test failed: %v is not equal to %v", got, tt.want)
 			}
 		})
 	}
@@ -40,9 +40,9 @@ func TestUpdateCounter(t *testing.T) {
 		values []int64
 		want   int64
 	}{
-		{name: "позитивный кейс- обновление метрики один вызов", values: []int64{3}, want: 3},
-		{name: "позитивный кейс- обновление метрики числа суммируются", values: []int64{3, 1}, want: 4},
-		{name: "позитивный кейс- обновление метрики отрицательное значение метрики", values: []int64{3, 1, -2}, want: 2},
+		{name: "positive case: single counter update", values: []int64{3}, want: 3},
+		{name: "positive case: counter values are summed", values: []int64{3, 1}, want: 4},
+		{name: "positive case: negative counter value", values: []int64{3, 1, -2}, want: 2},
 	}
 
 	for _, tt := range tests {
@@ -51,12 +51,12 @@ func TestUpdateCounter(t *testing.T) {
 			for _, v := range tt.values {
 				s.UpdateCounter("PollCount", v)
 			}
-			got,ok := s.GetCounter("PollCount")
-			if !ok{
-				t.Errorf("Метрика не найдена")
+			got, ok := s.GetCounter("PollCount")
+			if !ok {
+				t.Errorf("Metric not found")
 			}
-			if ; got != tt.want {
-				t.Errorf("Тест упал счетчик метрики не верный")
+			if got != tt.want {
+				t.Errorf("Test failed: metric counter is incorrect")
 			}
 		})
 	}

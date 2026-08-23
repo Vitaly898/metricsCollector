@@ -21,7 +21,7 @@ func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "type")
 	metricName := chi.URLParam(r, "name")
 	metricValue := chi.URLParam(r, "value")
-		if metricName == "" {
+	if metricName == "" {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
