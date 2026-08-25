@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"os"
 	"os/signal"
@@ -9,6 +10,11 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+
+	// Драйвер PostgreSQL импортируется «вслепую» (с подчёркиванием):
+	// нам нужен только side-эффект импорта — драйвер регистрирует себя
+	// в database/sql под именем "pgx". Напрямую пакет stdlib не используем.
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/Vitaly898/metricsCollector/internal/config"
 	"github.com/Vitaly898/metricsCollector/internal/server"
@@ -28,7 +34,21 @@ func main() {
 	fileStorage := storage.NewFileStorage(memStorage, cfg.FileStoragePath, cfg.StoreInterval, cfg.Restore)
 	fileStorage.Start()
 
-	srv := server.New(cfg, fileStorage, zapLogger)
+	// Подключение к БД. sql.Open НЕ устанавливает соединение —
+	// он лишь создаёт пул, который подключится лениво при первом запросе.
+	// Реальную проверку связи делает хендлер /ping через PingContext.
+	// Если DSN не задан — работаем без БД (nil), как в предыдущих итерациях.
+	var db *sql.DB
+	if cfg.DatabaseDSN != "" {
+		var err error
+		db, err = sql.Open("pgx", cfg.DatabaseDSN)
+		if err != nil {
+			zapLogger.Fatal("Failed to open database", zap.Error(err))
+		}
+		defer func() { _ = db.Close() }() // закрываем пул при завершении программы
+	}
+
+	srv := server.New(cfg, fileStorage, zapLogger, db)
 
 	go func() {
 		if err := srv.Run(); err != nil && err != http.ErrServerClosed {

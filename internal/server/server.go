@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -17,7 +18,8 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger) *Server {
+// db — пул соединений с PostgreSQL; может быть nil, если сервер запущен без БД.
+func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger, db *sql.DB) *Server {
 	r := chi.NewRouter()
 	r.Use(logger.Logger(zapLogger.Sugar()))
 	r.Use(middleware.GzipMiddleware)
@@ -30,6 +32,9 @@ func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger)
 	r.Post("/update/", handler.NewUpdateJSONHandler(store).ServeHTTP)
 	r.Post("/value", handler.NewValueJSONHandler(store).ServeHTTP)
 	r.Post("/value/", handler.NewValueJSONHandler(store).ServeHTTP)
+
+	// Проверка соединения с БД.
+	r.Get("/ping", handler.NewPingHandler(db).ServeHTTP)
 
 	return &Server{
 		httpServer: &http.Server{
