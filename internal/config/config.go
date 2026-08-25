@@ -11,10 +11,7 @@ type Config struct {
 	StoreInterval   int
 	FileStoragePath string
 	Restore         bool
-	// DatabaseDSN — строка подключения к PostgreSQL, например:
-	// postgres://user:password@localhost:5432/dbname?sslmode=disable
-	// Пустая строка = сервер работает без БД (автотесты старых итераций).
-	DatabaseDSN string
+	DatabaseDSN     string
 }
 
 func Parse() Config {
@@ -24,7 +21,7 @@ func Parse() Config {
 	fs.IntVar(&cfg.StoreInterval, "i", 300, "interval in seconds for saving metrics to file")
 	fs.StringVar(&cfg.FileStoragePath, "f", "/tmp/metrics-db.json", "path to file for storing metrics")
 	fs.BoolVar(&cfg.Restore, "r", true, "restore metrics from file on startup")
-	fs.StringVar(&cfg.DatabaseDSN, "d", "", "database DSN (PostgreSQL connection string)")
+	fs.StringVar(&cfg.DatabaseDSN, "d", "", "database DSN")
 	_ = fs.Parse(os.Args[1:])
 
 	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
