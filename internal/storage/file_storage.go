@@ -54,6 +54,18 @@ func (fs *FileStorage) UpdateCounter(name string, val int64) {
 	}
 }
 
+func (fs *FileStorage) UpdateMetrics(metrics []models.Metrics) error {
+	if err := fs.MemStorage.UpdateMetrics(metrics); err != nil {
+		return err
+	}
+	if fs.storeInterval == 0 {
+		if err := fs.Save(); err != nil {
+			logger.Errorw("Failed to save metrics", "error", err)
+		}
+	}
+	return nil
+}
+
 func (fs *FileStorage) Save() error {
 	fs.mu.Lock()
 	metrics := fs.getAllMetricsLocked()

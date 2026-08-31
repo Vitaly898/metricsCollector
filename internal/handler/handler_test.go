@@ -1,10 +1,13 @@
 package handler
 
 import (
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
+
+	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
 type mockStorage struct {
@@ -42,6 +45,22 @@ func (m *mockStorage) GetAllGauge() map[string]float64 {
 
 func (m *mockStorage) GetAllCounter() map[string]int64 {
 	return m.counterCalls
+}
+
+func (m *mockStorage) UpdateMetrics(metrics []models.Metrics) error {
+	for _, metric := range metrics {
+		switch metric.MType {
+		case models.Gauge:
+			if metric.Value != nil {
+				m.gaugeCalls[metric.ID] = *metric.Value
+			}
+		case models.Counter:
+			if metric.Delta != nil {
+				m.counterCalls[metric.ID] += *metric.Delta
+			}
+		}
+	}
+	return nil
 }
 
 func TestUpdateHandler(t *testing.T) {

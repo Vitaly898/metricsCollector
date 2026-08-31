@@ -65,6 +65,24 @@ func (m *MemStorage) GetAllCounter() map[string]int64 {
 	return res
 }
 
+func (m *MemStorage) UpdateMetrics(metrics []models.Metrics) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, metric := range metrics {
+		switch metric.MType {
+		case models.Gauge:
+			if metric.Value != nil {
+				m.gauge[metric.ID] = *metric.Value
+			}
+		case models.Counter:
+			if metric.Delta != nil {
+				m.counter[metric.ID] += *metric.Delta
+			}
+		}
+	}
+	return nil
+}
+
 func (m *MemStorage) getAllMetricsLocked() []models.Metrics {
 	metrics := make([]models.Metrics, 0, len(m.gauge)+len(m.counter))
 	for name, val := range m.gauge {

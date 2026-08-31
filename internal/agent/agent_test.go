@@ -17,7 +17,7 @@ func TestAgentRunSendsMetrics(t *testing.T) {
 	var metrics []models.Metrics
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var m models.Metrics
+		var batch []models.Metrics
 		body := r.Body
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gz, err := gzip.NewReader(r.Body)
@@ -29,9 +29,9 @@ func TestAgentRunSendsMetrics(t *testing.T) {
 			defer gz.Close()
 			body = gz
 		}
-		if err := json.NewDecoder(body).Decode(&m); err == nil {
+		if err := json.NewDecoder(body).Decode(&batch); err == nil {
 			mu.Lock()
-			metrics = append(metrics, m)
+			metrics = append(metrics, batch...)
 			mu.Unlock()
 		}
 		w.WriteHeader(http.StatusOK)

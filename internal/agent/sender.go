@@ -27,18 +27,22 @@ func NewSender(baseUrl string) *Sender {
 	}
 }
 
-func (s *Sender) sendMetric(m models.Metrics) bool {
-	url := fmt.Sprintf("%s/update", s.baseUrl)
+func (s *Sender) sendMetrics(metrics []models.Metrics) bool {
+	if len(metrics) == 0 {
+		return true
+	}
 
-	body, err := json.Marshal(m)
+	url := fmt.Sprintf("%s/updates/", s.baseUrl)
+
+	body, err := json.Marshal(metrics)
 	if err != nil {
-		logger.Errorw("Cannot marshal metric", "error", err)
+		logger.Errorw("Cannot marshal metrics", "error", err)
 		return false
 	}
 
 	compressed, err := compress.Compress(body)
 	if err != nil {
-		logger.Errorw("Cannot compress metric", "error", err)
+		logger.Errorw("Cannot compress metrics", "error", err)
 		return false
 	}
 
@@ -50,12 +54,14 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		logger.Errorw("Cannot send request", "error", err)
 		return false
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		logger.Errorw("Response status is not 200", "status", resp.StatusCode)
 		return false
@@ -67,29 +73,27 @@ func (s *Sender) sendMetric(m models.Metrics) bool {
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
 	delta := pollCount - s.lastPollCount
 	if delta < 0 {
-
 		delta = pollCount
 	}
 
-	allOk := true
+	metrics := make([]models.Metrics, 0, len(gauges)+1)
 	for metric, val := range gauges {
 		v := val
-		if !s.sendMetric(models.Metrics{
+		metrics = append(metrics, models.Metrics{
 			ID:    metric,
 			MType: models.Gauge,
 			Value: &v,
-		}) {
-			allOk = false
-		}
+		})
 	}
-	if !s.sendMetric(models.Metrics{
+
+	d := delta
+	metrics = append(metrics, models.Metrics{
 		ID:    "PollCount",
 		MType: models.Counter,
-		Delta: &delta,
-	}) {
-		allOk = false
-	}
-	if allOk {
+		Delta: &d,
+	})
+
+	if s.sendMetrics(metrics) {
 		s.lastPollCount += delta
 	}
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	pgxMigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+
+	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
 const dbTimeout = 3 * time.Second
@@ -147,4 +149,39 @@ func (s *PostgresStorage) GetAllCounter() map[string]int64 {
 	}
 
 	return result
+}
+
+func (s *PostgresStorage) UpdateMetrics(metrics []models.Metrics) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for _, m := range metrics {
+		var delta *int64
+		var value *float64
+		switch m.MType {
+		case models.Gauge:
+			value = m.Value
+		case models.Counter:
+			delta = m.Delta
+		}
+
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO metrics (name, type, delta, value)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (name, type) DO UPDATE SET
+				delta = CASE WHEN EXCLUDED.type = 'counter' THEN COALESCE(metrics.delta, 0) + EXCLUDED.delta ELSE metrics.delta END,
+				value = CASE WHEN EXCLUDED.type = 'gauge' THEN EXCLUDED.value ELSE metrics.value END
+		`, m.ID, m.MType, delta, value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
