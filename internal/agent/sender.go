@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -27,29 +28,24 @@ func NewSender(baseUrl string) *Sender {
 	}
 }
 
-func (s *Sender) sendMetrics(metrics []models.Metrics) bool {
-	if len(metrics) == 0 {
-		return true
-	}
+var retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
+func (s *Sender) trySendMetrics(metrics []models.Metrics) (int, error) {
 	url := fmt.Sprintf("%s/updates/", s.baseUrl)
 
 	body, err := json.Marshal(metrics)
 	if err != nil {
-		logger.Errorw("Cannot marshal metrics", "error", err)
-		return false
+		return 0, err
 	}
 
 	compressed, err := compress.Compress(body)
 	if err != nil {
-		logger.Errorw("Cannot compress metrics", "error", err)
-		return false
+		return 0, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressed))
 	if err != nil {
-		logger.Errorw("Cannot create request", "error", err)
-		return false
+		return 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
@@ -57,17 +53,32 @@ func (s *Sender) sendMetrics(metrics []models.Metrics) bool {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		logger.Errorw("Cannot send request", "error", err)
-		return false
+		return 0, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		logger.Errorw("Response status is not 200", "status", resp.StatusCode)
-		return false
+	return resp.StatusCode, nil
+}
+
+func (s *Sender) sendMetrics(metrics []models.Metrics) bool {
+	if len(metrics) == 0 {
+		return true
 	}
 
-	return true
+	for i := 0; i <= len(retryIntervals); i++ {
+		status, err := s.trySendMetrics(metrics)
+		if err == nil && status < http.StatusInternalServerError {
+			if status == http.StatusOK {
+				return true
+			}
+			return false
+		}
+		if i < len(retryIntervals) {
+			time.Sleep(retryIntervals[i])
+		}
+	}
+
+	return false
 }
 
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
