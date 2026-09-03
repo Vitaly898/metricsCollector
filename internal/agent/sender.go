@@ -6,23 +6,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.uber.org/zap"
-
 	"github.com/Vitaly898/metricsCollector/internal/compress"
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
-var logger = zap.Must(zap.NewProduction()).Sugar()
-
 type Sender struct {
-	baseUrl       string
+	baseURL       string
 	client        *http.Client
 	lastPollCount int64
 }
 
-func NewSender(baseUrl string) *Sender {
+func NewSender(baseURL string) *Sender {
 	return &Sender{
-		baseUrl: baseUrl,
+		baseURL: baseURL,
 		client: &http.Client{
 			Transport: NewRetryRoundTripper(nil, defaultRetryIntervals),
 		},
@@ -30,7 +26,7 @@ func NewSender(baseUrl string) *Sender {
 }
 
 func (s *Sender) trySendMetrics(metrics []models.Metrics) (int, error) {
-	url := fmt.Sprintf("%s/updates/", s.baseUrl)
+	url := fmt.Sprintf("%s/updates/", s.baseURL)
 
 	body, err := json.Marshal(metrics)
 	if err != nil {

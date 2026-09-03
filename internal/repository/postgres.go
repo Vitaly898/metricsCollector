@@ -161,6 +161,9 @@ func (s *PostgresStorage) GetAllGauge() map[string]float64 {
 			result[name] = value
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return result
+	}
 
 	return result
 }
@@ -188,6 +191,9 @@ func (s *PostgresStorage) GetAllCounter() map[string]int64 {
 		if err := rows.Scan(&name, &delta); err == nil {
 			result[name] = delta
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return result
 	}
 
 	return result

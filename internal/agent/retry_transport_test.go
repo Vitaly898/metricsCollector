@@ -121,8 +121,9 @@ func TestRetryRoundTripperExhaustsRetries(t *testing.T) {
 	}
 
 	rt := NewRetryRoundTripper(stub, []time.Duration{0, 0, 0})
-	_, err := rt.RoundTrip(newTestRequest(t))
+	resp, err := rt.RoundTrip(newTestRequest(t))
 	if err == nil {
+		resp.Body.Close()
 		t.Fatal("expected error after retries exhausted")
 	}
 	if stub.calls != 4 {
