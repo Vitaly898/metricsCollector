@@ -4,20 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	pgxMigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	models "github.com/Vitaly898/metricsCollector/internal/model"
+	"github.com/Vitaly898/metricsCollector/migrations"
 )
-
-const dbTimeout = 15 * time.Second
 
 var retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
@@ -28,7 +25,8 @@ type PostgresStorage struct {
 func isRetriableDBError(err error) bool {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
-		return pgerrcode.IsConnectionException(pgErr.Code)
+		return pgerrcode.IsConnectionException(pgErr.Code) ||
+			pgerrcode.IsTransactionRollback(pgErr.Code)
 	}
 	return false
 }
@@ -52,8 +50,7 @@ func retry(ctx context.Context, fn func() error) error {
 }
 
 func NewPostgresStorage(db *sql.DB) (*PostgresStorage, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+	ctx := context.TODO()
 	if err := db.PingContext(ctx); err != nil {
 		return nil, err
 	}
@@ -63,16 +60,12 @@ func NewPostgresStorage(db *sql.DB) (*PostgresStorage, error) {
 		return nil, err
 	}
 
-	wd, err := os.Getwd()
+	source, err := iofs.New(migrations.FS, ".")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+filepath.Join(wd, "migrations"),
-		"pgx",
-		driver,
-	)
+	m, err := migrate.NewWithInstance("iofs", source, "pgx", driver)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +77,14 @@ func NewPostgresStorage(db *sql.DB) (*PostgresStorage, error) {
 	return &PostgresStorage{db: db}, nil
 }
 
-func (s *PostgresStorage) UpdateGauge(name string, val float64) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+func (s *PostgresStorage) Ping(ctx context.Context) error {
+	return s.db.PingContext(ctx)
+}
 
-	_ = retry(ctx, func() error {
+func (s *PostgresStorage) UpdateGauge(name string, val float64) error {
+	ctx := context.TODO()
+
+	return retry(ctx, func() error {
 		_, err := s.db.ExecContext(ctx, `
 			INSERT INTO metrics (name, type, value)
 			VALUES ($1, 'gauge', $2)
@@ -98,11 +94,10 @@ func (s *PostgresStorage) UpdateGauge(name string, val float64) {
 	})
 }
 
-func (s *PostgresStorage) UpdateCounter(name string, val int64) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+func (s *PostgresStorage) UpdateCounter(name string, val int64) error {
+	ctx := context.TODO()
 
-	_ = retry(ctx, func() error {
+	return retry(ctx, func() error {
 		_, err := s.db.ExecContext(ctx, `
 			INSERT INTO metrics (name, type, delta)
 			VALUES ($1, 'counter', $2)
@@ -113,8 +108,7 @@ func (s *PostgresStorage) UpdateCounter(name string, val int64) {
 }
 
 func (s *PostgresStorage) GetGauge(name string) (float64, bool) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+	ctx := context.TODO()
 
 	var value sql.NullFloat64
 	err := retry(ctx, func() error {
@@ -129,8 +123,7 @@ func (s *PostgresStorage) GetGauge(name string) (float64, bool) {
 }
 
 func (s *PostgresStorage) GetCounter(name string) (int64, bool) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+	ctx := context.TODO()
 
 	var delta sql.NullInt64
 	err := retry(ctx, func() error {
@@ -145,8 +138,7 @@ func (s *PostgresStorage) GetCounter(name string) (int64, bool) {
 }
 
 func (s *PostgresStorage) GetAllGauge() map[string]float64 {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+	ctx := context.TODO()
 
 	result := make(map[string]float64)
 	var rows *sql.Rows
@@ -174,8 +166,7 @@ func (s *PostgresStorage) GetAllGauge() map[string]float64 {
 }
 
 func (s *PostgresStorage) GetAllCounter() map[string]int64 {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+	ctx := context.TODO()
 
 	result := make(map[string]int64)
 	var rows *sql.Rows
@@ -203,8 +194,7 @@ func (s *PostgresStorage) GetAllCounter() map[string]int64 {
 }
 
 func (s *PostgresStorage) UpdateMetrics(metrics []models.Metrics) error {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
+	ctx := context.TODO()
 
 	return retry(ctx, func() error {
 		tx, err := s.db.BeginTx(ctx, nil)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -24,11 +23,11 @@ type Sender struct {
 func NewSender(baseUrl string) *Sender {
 	return &Sender{
 		baseUrl: baseUrl,
-		client:  &http.Client{},
+		client: &http.Client{
+			Transport: NewRetryRoundTripper(nil, defaultRetryIntervals),
+		},
 	}
 }
-
-var retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
 func (s *Sender) trySendMetrics(metrics []models.Metrics) (int, error) {
 	url := fmt.Sprintf("%s/updates/", s.baseUrl)
@@ -65,20 +64,9 @@ func (s *Sender) sendMetrics(metrics []models.Metrics) bool {
 		return true
 	}
 
-	for i := 0; i <= len(retryIntervals); i++ {
-		status, err := s.trySendMetrics(metrics)
-		if err == nil && status < http.StatusInternalServerError {
-			if status == http.StatusOK {
-				return true
-			}
-			return false
-		}
-		if i < len(retryIntervals) {
-			time.Sleep(retryIntervals[i])
-		}
-	}
-
-	return false
+	// Ретраи выполняются прозрачно внутри http.Client (см. retryRoundTripper).
+	status, err := s.trySendMetrics(metrics)
+	return err == nil && status == http.StatusOK
 }
 
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {

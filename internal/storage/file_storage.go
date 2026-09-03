@@ -36,22 +36,28 @@ func NewFileStorage(mem *MemStorage, filePath string, storeInterval int, restore
 	return fs
 }
 
-func (fs *FileStorage) UpdateGauge(name string, val float64) {
-	fs.MemStorage.UpdateGauge(name, val)
+func (fs *FileStorage) UpdateGauge(name string, val float64) error {
+	if err := fs.MemStorage.UpdateGauge(name, val); err != nil {
+		return err
+	}
 	if fs.storeInterval == 0 {
 		if err := fs.Save(); err != nil {
-			logger.Errorw("Failed to save metrics", "error", err)
+			return err
 		}
 	}
+	return nil
 }
 
-func (fs *FileStorage) UpdateCounter(name string, val int64) {
-	fs.MemStorage.UpdateCounter(name, val)
+func (fs *FileStorage) UpdateCounter(name string, val int64) error {
+	if err := fs.MemStorage.UpdateCounter(name, val); err != nil {
+		return err
+	}
 	if fs.storeInterval == 0 {
 		if err := fs.Save(); err != nil {
-			logger.Errorw("Failed to save metrics", "error", err)
+			return err
 		}
 	}
+	return nil
 }
 
 func (fs *FileStorage) UpdateMetrics(metrics []models.Metrics) error {

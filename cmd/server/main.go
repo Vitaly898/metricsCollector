@@ -55,7 +55,7 @@ func main() {
 		store = fileStorage
 	}
 
-	srv := server.New(cfg, store, zapLogger, db)
+	srv := server.New(cfg, store, zapLogger)
 
 	go func() {
 		if err := srv.Run(); err != nil && err != http.ErrServerClosed {

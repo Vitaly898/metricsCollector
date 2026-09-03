@@ -34,7 +34,8 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	var buf bytes.Buffer
 	if err := indexTmpl.Execute(&buf, metrics); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Errorw("Failed to render index page", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html;charset=utf-8")

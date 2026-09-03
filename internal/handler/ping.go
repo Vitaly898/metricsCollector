@@ -2,32 +2,35 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 const pingTimeout = 2 * time.Second
 
-type PingHandler struct {
-	db *sql.DB
+var logger = zap.Must(zap.NewProduction()).Sugar()
+
+type Pinger interface {
+	Ping(ctx context.Context) error
 }
 
-func NewPingHandler(db *sql.DB) *PingHandler {
-	return &PingHandler{db: db}
+type PingHandler struct {
+	pinger Pinger
+}
+
+func NewPingHandler(pinger Pinger) *PingHandler {
+	return &PingHandler{pinger: pinger}
 }
 
 func (h *PingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if h.db == nil {
-		http.Error(w, "database is not configured", http.StatusInternalServerError)
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), pingTimeout)
 	defer cancel()
 
-	if err := h.db.PingContext(ctx); err != nil {
-		http.Error(w, "database ping failed: "+err.Error(), http.StatusInternalServerError)
+	if err := h.pinger.Ping(ctx); err != nil {
+		logger.Errorw("Storage ping failed", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 

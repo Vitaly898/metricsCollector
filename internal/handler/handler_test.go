@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,12 +23,18 @@ func newMockStorage() *mockStorage {
 	}
 }
 
-func (m *mockStorage) UpdateGauge(name string, value float64) {
-	m.gaugeCalls[name] = value
+func (m *mockStorage) Ping(_ context.Context) error {
+	return nil
 }
 
-func (m *mockStorage) UpdateCounter(name string, value int64) {
+func (m *mockStorage) UpdateGauge(name string, value float64) error {
+	m.gaugeCalls[name] = value
+	return nil
+}
+
+func (m *mockStorage) UpdateCounter(name string, value int64) error {
 	m.counterCalls[name] += value
+	return nil
 }
 func (m *mockStorage) GetGauge(name string) (float64, bool) {
 	val, ok := m.gaugeCalls[name]

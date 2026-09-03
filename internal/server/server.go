@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -18,7 +17,7 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger, db *sql.DB) *Server {
+func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger) *Server {
 	r := chi.NewRouter()
 	r.Use(logger.Logger(zapLogger.Sugar()))
 	r.Use(middleware.GzipMiddleware)
@@ -34,7 +33,7 @@ func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger,
 
 	r.Post("/updates/", handler.NewUpdatesHandler(store).ServeHTTP)
 
-	r.Get("/ping", handler.NewPingHandler(db).ServeHTTP)
+	r.Get("/ping", handler.NewPingHandler(store).ServeHTTP)
 
 	return &Server{
 		httpServer: &http.Server{

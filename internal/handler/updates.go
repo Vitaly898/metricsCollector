@@ -45,6 +45,7 @@ func (h *UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.storage.UpdateMetrics(metrics); err != nil {
+		logger.Errorw("Failed to update metrics batch", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
