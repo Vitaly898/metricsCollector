@@ -141,27 +141,32 @@ func (s *PostgresStorage) GetAllGauge() map[string]float64 {
 	ctx := context.TODO()
 
 	result := make(map[string]float64)
-	var rows *sql.Rows
 	err := retry(ctx, func() error {
-		var err error
-		rows, err = s.db.QueryContext(ctx, `
+		rows, err := s.db.QueryContext(ctx, `
 			SELECT name, value FROM metrics WHERE type = 'gauge'
 		`)
-		return err
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		scanned := make(map[string]float64)
+		for rows.Next() {
+			var name string
+			var value float64
+			if err := rows.Scan(&name, &value); err != nil {
+				return err
+			}
+			scanned[name] = value
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		result = scanned
+		return nil
 	})
 	if err != nil {
-		return result
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var name string
-		var value float64
-		if err := rows.Scan(&name, &value); err == nil {
-			result[name] = value
-		}
-	}
-	if err := rows.Err(); err != nil {
 		return result
 	}
 
@@ -172,27 +177,32 @@ func (s *PostgresStorage) GetAllCounter() map[string]int64 {
 	ctx := context.TODO()
 
 	result := make(map[string]int64)
-	var rows *sql.Rows
 	err := retry(ctx, func() error {
-		var err error
-		rows, err = s.db.QueryContext(ctx, `
+		rows, err := s.db.QueryContext(ctx, `
 			SELECT name, delta FROM metrics WHERE type = 'counter'
 		`)
-		return err
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		scanned := make(map[string]int64)
+		for rows.Next() {
+			var name string
+			var delta int64
+			if err := rows.Scan(&name, &delta); err != nil {
+				return err
+			}
+			scanned[name] = delta
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		result = scanned
+		return nil
 	})
 	if err != nil {
-		return result
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var name string
-		var delta int64
-		if err := rows.Scan(&name, &delta); err == nil {
-			result[name] = delta
-		}
-	}
-	if err := rows.Err(); err != nil {
 		return result
 	}
 
