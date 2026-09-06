@@ -6,90 +6,89 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.uber.org/zap"
-
 	"github.com/Vitaly898/metricsCollector/internal/compress"
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
-var logger = zap.Must(zap.NewProduction()).Sugar()
-
 type Sender struct {
-	baseUrl       string
+	baseURL       string
 	client        *http.Client
 	lastPollCount int64
 }
 
-func NewSender(baseUrl string) *Sender {
+func NewSender(baseURL string) *Sender {
 	return &Sender{
-		baseUrl: baseUrl,
-		client:  &http.Client{},
+		baseURL: baseURL,
+		client: &http.Client{
+			Transport: NewRetryRoundTripper(nil, defaultRetryIntervals),
+		},
 	}
 }
 
-func (s *Sender) sendMetric(m models.Metrics) bool {
-	url := fmt.Sprintf("%s/update", s.baseUrl)
+func (s *Sender) trySendMetrics(metrics []models.Metrics) (int, error) {
+	url := fmt.Sprintf("%s/updates/", s.baseURL)
 
-	body, err := json.Marshal(m)
+	body, err := json.Marshal(metrics)
 	if err != nil {
-		logger.Errorw("Cannot marshal metric", "error", err)
-		return false
+		return 0, err
 	}
 
 	compressed, err := compress.Compress(body)
 	if err != nil {
-		logger.Errorw("Cannot compress metric", "error", err)
-		return false
+		return 0, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(compressed))
 	if err != nil {
-		logger.Errorw("Cannot create request", "error", err)
-		return false
+		return 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")
+
 	resp, err := s.client.Do(req)
 	if err != nil {
-		logger.Errorw("Cannot send request", "error", err)
-		return false
+		return 0, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		logger.Errorw("Response status is not 200", "status", resp.StatusCode)
-		return false
+
+	return resp.StatusCode, nil
+}
+
+func (s *Sender) sendMetrics(metrics []models.Metrics) bool {
+	if len(metrics) == 0 {
+		return true
 	}
 
-	return true
+	// Ретраи выполняются прозрачно внутри http.Client (см. retryRoundTripper).
+	status, err := s.trySendMetrics(metrics)
+	return err == nil && status == http.StatusOK
 }
 
 func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
 	delta := pollCount - s.lastPollCount
 	if delta < 0 {
-
 		delta = pollCount
 	}
 
-	allOk := true
+	metrics := make([]models.Metrics, 0, len(gauges)+1)
 	for metric, val := range gauges {
 		v := val
-		if !s.sendMetric(models.Metrics{
+		metrics = append(metrics, models.Metrics{
 			ID:    metric,
 			MType: models.Gauge,
 			Value: &v,
-		}) {
-			allOk = false
-		}
+		})
 	}
-	if !s.sendMetric(models.Metrics{
+
+	d := delta
+	metrics = append(metrics, models.Metrics{
 		ID:    "PollCount",
 		MType: models.Counter,
-		Delta: &delta,
-	}) {
-		allOk = false
-	}
-	if allOk {
+		Delta: &d,
+	})
+
+	if s.sendMetrics(metrics) {
 		s.lastPollCount += delta
 	}
 }

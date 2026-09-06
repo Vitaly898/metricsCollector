@@ -33,14 +33,22 @@ func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		h.storage.UpdateCounter(metricName, met)
+		if err := h.storage.UpdateCounter(metricName, met); err != nil {
+			logger.Errorw("Failed to update counter", "name", metricName, "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	case models.Gauge:
 		met, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		h.storage.UpdateGauge(metricName, met)
+		if err := h.storage.UpdateGauge(metricName, met); err != nil {
+			logger.Errorw("Failed to update gauge", "name", metricName, "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		return

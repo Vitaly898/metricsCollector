@@ -33,7 +33,11 @@ func (h *UpdateJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		h.storage.UpdateCounter(m.ID, *m.Delta)
+		if err := h.storage.UpdateCounter(m.ID, *m.Delta); err != nil {
+			logger.Errorw("Failed to update counter", "id", m.ID, "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		v, _ := h.storage.GetCounter(m.ID)
 		*m.Delta = v
@@ -42,7 +46,11 @@ func (h *UpdateJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		h.storage.UpdateGauge(m.ID, *m.Value)
+		if err := h.storage.UpdateGauge(m.ID, *m.Value); err != nil {
+			logger.Errorw("Failed to update gauge", "id", m.ID, "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		return

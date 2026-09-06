@@ -31,6 +31,10 @@ func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger)
 	r.Post("/value", handler.NewValueJSONHandler(store).ServeHTTP)
 	r.Post("/value/", handler.NewValueJSONHandler(store).ServeHTTP)
 
+	r.Post("/updates/", handler.NewUpdatesHandler(store).ServeHTTP)
+
+	r.Get("/ping", handler.NewPingHandler(store).ServeHTTP)
+
 	return &Server{
 		httpServer: &http.Server{
 			Addr:    cfg.Addr,

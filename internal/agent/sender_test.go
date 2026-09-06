@@ -11,15 +11,15 @@ import (
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
-type recordedRequest struct {
+type recordedBatch struct {
 	method      string
 	path        string
 	contentType string
 	encoding    string
-	metric      models.Metrics
+	metrics     []models.Metrics
 }
 
-func recordRequest(t *testing.T, r *http.Request) recordedRequest {
+func recordBatch(t *testing.T, r *http.Request) recordedBatch {
 	t.Helper()
 	body := r.Body
 	if r.Header.Get("Content-Encoding") == "gzip" {
@@ -30,106 +30,122 @@ func recordRequest(t *testing.T, r *http.Request) recordedRequest {
 		defer gz.Close()
 		body = gz
 	}
-	var m models.Metrics
-	if err := json.NewDecoder(body).Decode(&m); err != nil {
+	var metrics []models.Metrics
+	if err := json.NewDecoder(body).Decode(&metrics); err != nil {
 		t.Errorf("cannot decode request body: %v", err)
 	}
-	return recordedRequest{
+	return recordedBatch{
 		method:      r.Method,
 		path:        r.URL.Path,
 		contentType: r.Header.Get("Content-Type"),
 		encoding:    r.Header.Get("Content-Encoding"),
-		metric:      m,
+		metrics:     metrics,
 	}
 }
 
-func TestSenderSendsGaugeRequest(t *testing.T) {
+func findMetric(metrics []models.Metrics, id string, mType string) (models.Metrics, bool) {
+	for _, m := range metrics {
+		if m.ID == id && m.MType == mType {
+			return m, true
+		}
+	}
+	return models.Metrics{}, false
+}
+
+func TestSenderSendsBatchRequest(t *testing.T) {
 	var mu sync.Mutex
-	var reqs []recordedRequest
+	var batches []recordedBatch
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rec := recordRequest(t, r)
+		batch := recordBatch(t, r)
 		mu.Lock()
-		reqs = append(reqs, rec)
+		batches = append(batches, batch)
 		mu.Unlock()
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
 	sender := NewSender(server.URL)
-	sender.Send(map[string]float64{"Alloc": 123.5}, 1)
+	sender.Send(map[string]float64{"Alloc": 123.5}, 7)
 
 	mu.Lock()
-	got := append([]recordedRequest(nil), reqs...)
+	got := append([]recordedBatch(nil), batches...)
 	mu.Unlock()
 
-	if len(got) != 2 {
-		t.Fatalf("expected 2 requests, got %d", len(got))
+	if len(got) != 1 {
+		t.Fatalf("expected 1 request, got %d", len(got))
 	}
 
-	gauge := got[0]
-	if gauge.method != http.MethodPost {
-		t.Errorf("gauge request method = %q, want POST", gauge.method)
+	batch := got[0]
+	if batch.method != http.MethodPost {
+		t.Errorf("request method = %q, want POST", batch.method)
 	}
-	if gauge.path != "/update" {
-		t.Errorf("gauge request path = %q, want /update", gauge.path)
+	if batch.path != "/updates/" {
+		t.Errorf("request path = %q, want /updates/", batch.path)
 	}
-	if gauge.contentType != "application/json" {
-		t.Errorf("gauge Content-Type = %q, want application/json", gauge.contentType)
+	if batch.contentType != "application/json" {
+		t.Errorf("Content-Type = %q, want application/json", batch.contentType)
 	}
-	if gauge.encoding != "gzip" {
-		t.Errorf("gauge Content-Encoding = %q, want gzip", gauge.encoding)
+	if batch.encoding != "gzip" {
+		t.Errorf("Content-Encoding = %q, want gzip", batch.encoding)
 	}
-	if gauge.metric.ID != "Alloc" || gauge.metric.MType != models.Gauge {
-		t.Errorf("gauge metric = %+v, want id=Alloc type=gauge", gauge.metric)
+
+	gauge, ok := findMetric(batch.metrics, "Alloc", models.Gauge)
+	if !ok {
+		t.Errorf("gauge Alloc not found in batch")
 	}
-	if gauge.metric.Value == nil || *gauge.metric.Value != 123.5 {
-		t.Errorf("gauge value = %v, want 123.5", gauge.metric.Value)
+	if gauge.Value == nil || *gauge.Value != 123.5 {
+		t.Errorf("gauge value = %v, want 123.5", gauge.Value)
+	}
+
+	counter, ok := findMetric(batch.metrics, "PollCount", models.Counter)
+	if !ok {
+		t.Errorf("counter PollCount not found in batch")
+	}
+	if counter.Delta == nil || *counter.Delta != 7 {
+		t.Errorf("counter delta = %v, want 7", counter.Delta)
 	}
 }
 
-func TestSenderSendsCounterRequest(t *testing.T) {
+func TestSenderRetriesOnServerError(t *testing.T) {
 	var mu sync.Mutex
-	var reqs []recordedRequest
+	attempts := 0
+	var received []models.Metrics
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rec := recordRequest(t, r)
 		mu.Lock()
-		reqs = append(reqs, rec)
+		attempts++
+		current := attempts
+		mu.Unlock()
+
+		if current < 2 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		batch := recordBatch(t, r)
+		mu.Lock()
+		received = append(received, batch.metrics...)
 		mu.Unlock()
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
 	sender := NewSender(server.URL)
-	sender.Send(map[string]float64{"Alloc": 1}, 7)
+	sender.Send(map[string]float64{"Alloc": 42}, 1)
 
 	mu.Lock()
-	got := append([]recordedRequest(nil), reqs...)
-	mu.Unlock()
+	defer mu.Unlock()
 
-	if len(got) != 2 {
-		t.Fatalf("expected 2 requests, got %d", len(got))
+	if attempts != 2 {
+		t.Errorf("expected 2 attempts, got %d", attempts)
 	}
-
-	counter := got[1]
-	if counter.method != http.MethodPost {
-		t.Errorf("counter request method = %q, want POST", counter.method)
+	m, ok := findMetric(received, "Alloc", models.Gauge)
+	if !ok {
+		t.Fatalf(" Alloc not found in received batch")
 	}
-	if counter.path != "/update" {
-		t.Errorf("counter request path = %q, want /update", counter.path)
-	}
-	if counter.contentType != "application/json" {
-		t.Errorf("counter Content-Type = %q, want application/json", counter.contentType)
-	}
-	if counter.encoding != "gzip" {
-		t.Errorf("counter Content-Encoding = %q, want gzip", counter.encoding)
-	}
-	if counter.metric.ID != "PollCount" || counter.metric.MType != models.Counter {
-		t.Errorf("counter metric = %+v, want id=PollCount type=counter", counter.metric)
-	}
-	if counter.metric.Delta == nil || *counter.metric.Delta != 7 {
-		t.Errorf("counter delta = %v, want 7", counter.metric.Delta)
+	if m.Value == nil || *m.Value != 42 {
+		t.Errorf("gauge value = %v, want 42", m.Value)
 	}
 }
 
@@ -138,7 +154,7 @@ func TestSenderSendsPollCountDelta(t *testing.T) {
 	var totalPollCount int64
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var m models.Metrics
+		var metrics []models.Metrics
 		body := r.Body
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gz, err := gzip.NewReader(r.Body)
@@ -150,15 +166,17 @@ func TestSenderSendsPollCountDelta(t *testing.T) {
 			defer gz.Close()
 			body = gz
 		}
-		if err := json.NewDecoder(body).Decode(&m); err != nil {
+		if err := json.NewDecoder(body).Decode(&metrics); err != nil {
 			t.Errorf("cannot decode request body: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if m.MType == models.Counter && m.ID == "PollCount" && m.Delta != nil {
-			mu.Lock()
-			totalPollCount += *m.Delta
-			mu.Unlock()
+		for _, m := range metrics {
+			if m.MType == models.Counter && m.ID == "PollCount" && m.Delta != nil {
+				mu.Lock()
+				totalPollCount += *m.Delta
+				mu.Unlock()
+			}
 		}
 		w.WriteHeader(http.StatusOK)
 	}))

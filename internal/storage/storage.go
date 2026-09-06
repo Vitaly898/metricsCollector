@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"sync"
 
 	models "github.com/Vitaly898/metricsCollector/internal/model"
@@ -19,16 +20,23 @@ func NewMemStorage() *MemStorage {
 	}
 }
 
-func (m *MemStorage) UpdateGauge(name string, val float64) {
+// Ping для in-memory хранилища всегда успешен: хранилище работает, пока работает процесс.
+func (m *MemStorage) Ping(_ context.Context) error {
+	return nil
+}
+
+func (m *MemStorage) UpdateGauge(name string, val float64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.gauge[name] = val
+	return nil
 }
 
-func (m *MemStorage) UpdateCounter(name string, val int64) {
+func (m *MemStorage) UpdateCounter(name string, val int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.counter[name] += val
+	return nil
 }
 
 func (m *MemStorage) GetGauge(name string) (float64, bool) {
@@ -63,6 +71,24 @@ func (m *MemStorage) GetAllCounter() map[string]int64 {
 		res[k] = v
 	}
 	return res
+}
+
+func (m *MemStorage) UpdateMetrics(metrics []models.Metrics) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, metric := range metrics {
+		switch metric.MType {
+		case models.Gauge:
+			if metric.Value != nil {
+				m.gauge[metric.ID] = *metric.Value
+			}
+		case models.Counter:
+			if metric.Delta != nil {
+				m.counter[metric.ID] += *metric.Delta
+			}
+		}
+	}
+	return nil
 }
 
 func (m *MemStorage) getAllMetricsLocked() []models.Metrics {
