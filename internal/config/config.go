@@ -12,11 +12,13 @@ type Config struct {
 	FileStoragePath string
 	Restore         bool
 	DatabaseDSN     string
+	Key             string
 }
 
 func Parse() Config {
 	var cfg Config
 	fs := flag.NewFlagSet("server", flag.ContinueOnError)
+	fs.StringVar(&cfg.Key, "k", "", "key for hash signing")
 	fs.StringVar(&cfg.Addr, "a", "localhost:8080", "server address")
 	fs.IntVar(&cfg.StoreInterval, "i", 300, "interval in seconds for saving metrics to file")
 	fs.StringVar(&cfg.FileStoragePath, "f", "/tmp/metrics-db.json", "path to file for storing metrics")
@@ -43,6 +45,9 @@ func Parse() Config {
 
 	if envDSN, ok := os.LookupEnv("DATABASE_DSN"); ok {
 		cfg.DatabaseDSN = envDSN
+	}
+	if envKey, ok := os.LookupEnv("KEY"); ok {
+		cfg.Key = envKey
 	}
 
 	return cfg

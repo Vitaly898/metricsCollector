@@ -39,7 +39,7 @@ func TestAgentRunSendsMetrics(t *testing.T) {
 	defer server.Close()
 
 	collector := NewCollector()
-	sender := NewSender(server.URL)
+	sender := NewSender(server.URL, "")
 	a := NewAgent(collector, sender, 10*time.Millisecond, 25*time.Millisecond)
 
 	go a.Run()

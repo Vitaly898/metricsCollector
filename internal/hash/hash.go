@@ -1,0 +1,13 @@
+package hash
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+)
+
+func Compute(data []byte, key string) string {
+	h := sha256.New()
+	h.Write([]byte(key))
+	h.Write(data)
+	return hex.EncodeToString(h.Sum(nil))
+}

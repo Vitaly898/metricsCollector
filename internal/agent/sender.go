@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/Vitaly898/metricsCollector/internal/hash"
 	"net/http"
 
 	"github.com/Vitaly898/metricsCollector/internal/compress"
@@ -14,11 +15,13 @@ type Sender struct {
 	baseURL       string
 	client        *http.Client
 	lastPollCount int64
+	key           string
 }
 
-func NewSender(baseURL string) *Sender {
+func NewSender(baseURL string, key string) *Sender {
 	return &Sender{
 		baseURL: baseURL,
+		key:     key,
 		client: &http.Client{
 			Transport: NewRetryRoundTripper(nil, defaultRetryIntervals),
 		},
@@ -45,6 +48,9 @@ func (s *Sender) trySendMetrics(metrics []models.Metrics) (int, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")
+	if s.key != "" {
+		req.Header.Set("HashSHA256", hash.Compute(body, s.key))
+	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {

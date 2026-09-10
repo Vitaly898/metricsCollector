@@ -13,6 +13,7 @@ func main() {
 	addr := flag.String("a", "localhost:8080", "server address")
 	reportInterval := flag.Int("r", 10, "metrics sending interval in seconds")
 	pollInterval := flag.Int("p", 2, "metrics polling interval in seconds")
+	key := flag.String("k", "", "key for hash")
 	flag.Parse()
 	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
 		*addr = envAddr
@@ -27,8 +28,11 @@ func main() {
 			*pollInterval = v
 		}
 	}
+	if envKey, ok := os.LookupEnv("KEY"); ok {
+		*key = envKey
+	}
 	collector := agent.NewCollector()
-	sender := agent.NewSender("http://" + *addr)
+	sender := agent.NewSender("http://"+*addr, *key)
 	a := agent.NewAgent(collector, sender, time.Duration(*pollInterval)*time.Second, time.Duration(*reportInterval)*time.Second)
 	a.Run()
 

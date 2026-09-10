@@ -21,6 +21,7 @@ func New(cfg config.Config, store handler.MetricsStorage, zapLogger *zap.Logger)
 	r := chi.NewRouter()
 	r.Use(logger.Logger(zapLogger.Sugar()))
 	r.Use(middleware.GzipMiddleware)
+	r.Use(middleware.HashMiddleware(cfg.Key))
 
 	r.Post("/update/{type}/{name}/{value}", handler.NewUpdateHandler(store).ServeHTTP)
 	r.Get("/value/{type}/{name}", handler.NewValueHandler(store).ServeHTTP)
