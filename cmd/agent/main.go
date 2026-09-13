@@ -14,6 +14,7 @@ func main() {
 	reportInterval := flag.Int("r", 10, "metrics sending interval in seconds")
 	pollInterval := flag.Int("p", 2, "metrics polling interval in seconds")
 	key := flag.String("k", "", "key for hash")
+	rateLimit := flag.Int("l", 1, "max concurrent outgoing requests (worker pool size)")
 	flag.Parse()
 	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
 		*addr = envAddr
@@ -31,9 +32,14 @@ func main() {
 	if envKey, ok := os.LookupEnv("KEY"); ok {
 		*key = envKey
 	}
+	if envRateLimit, ok := os.LookupEnv("RATE_LIMIT"); ok {
+		if v, err := strconv.Atoi(envRateLimit); err == nil {
+			*rateLimit = v
+		}
+	}
 	collector := agent.NewCollector()
 	sender := agent.NewSender("http://"+*addr, *key)
-	a := agent.NewAgent(collector, sender, time.Duration(*pollInterval)*time.Second, time.Duration(*reportInterval)*time.Second)
+	a := agent.NewAgent(collector, sender, time.Duration(*pollInterval)*time.Second, time.Duration(*reportInterval)*time.Second, *rateLimit)
 	a.Run()
 
 }
