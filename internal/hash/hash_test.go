@@ -5,7 +5,9 @@ import (
 )
 
 func TestHash(t *testing.T) {
-	if Compute([]byte("body"), "secret") != Compute([]byte("body"), "secret") {
+	sum1 := Compute([]byte("body"), "secret")
+	sum2 := Compute([]byte("body"), "secret")
+	if sum1 != sum2 {
 		t.Error("hash is not deterministic")
 	}
 	if Compute([]byte("body"), "secret") == Compute([]byte("body"), "otherKey") {
