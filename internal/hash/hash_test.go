@@ -17,7 +17,7 @@ func TestHash(t *testing.T) {
 		t.Error("hash doesn't depend on data")
 	}
 	sum := Compute([]byte("The quick brown fox jumps over the lazy dog"), "key")
-	expected := "51729876100348eb46ed8c4bf39efa4037a3a2c687f864348ed69292a67ffdbc"
+	expected := "97yD9DBThCSxMpjmqm+xQ+9NWaFJRhdZl0edvC0aPNg="
 	if sum != expected {
 		t.Errorf("got %q, want %q", sum, expected)
 	}

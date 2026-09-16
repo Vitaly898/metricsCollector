@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -20,9 +21,11 @@ type Agent struct {
 	sendInterval time.Duration
 	rateLimit    int
 	jobs         chan sendJob
-	stop         chan struct{}
 	done         chan struct{}
 	wg           sync.WaitGroup
+
+	mu     sync.Mutex
+	cancel context.CancelFunc
 }
 
 func NewAgent(c *Collector, s *Sender, pollInterval, sendInterval time.Duration, rateLimit int) *Agent {
@@ -36,19 +39,18 @@ func NewAgent(c *Collector, s *Sender, pollInterval, sendInterval time.Duration,
 		pollInterval: pollInterval,
 		sendInterval: sendInterval,
 		rateLimit:    rateLimit,
-		jobs:         make(chan sendJob),
-		stop:         make(chan struct{}),
+		jobs:         make(chan sendJob, rateLimit),
 		done:         make(chan struct{}),
 	}
 }
 
-func (a *Agent) collectLoop(collect func() map[string]float64, countPoll bool) {
+func (a *Agent) collectLoop(ctx context.Context, collect func() map[string]float64, countPoll bool) {
 	defer a.wg.Done()
 	ticker := time.NewTicker(a.pollInterval)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-a.stop:
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
 			a.storage.UpdateGauges(collect())
@@ -59,41 +61,63 @@ func (a *Agent) collectLoop(collect func() map[string]float64, countPoll bool) {
 	}
 }
 
-func (a *Agent) worker() {
+func (a *Agent) worker(ctx context.Context) {
 	defer a.wg.Done()
-	for job := range a.jobs {
-		a.sender.SendBatch(job.metrics, job.pollCount)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case job, ok := <-a.jobs:
+			if !ok {
+				return
+			}
+			a.sender.SendBatch(job.metrics, job.pollCount)
+		}
 	}
 }
 
-func (a *Agent) Run() {
+func (a *Agent) Run(ctx context.Context) {
 	defer close(a.done)
 
+	ctx, cancel := context.WithCancel(ctx)
+	a.mu.Lock()
+	a.cancel = cancel
+	a.mu.Unlock()
+
 	a.wg.Add(2)
-	go a.collectLoop(a.collector.Collect, true)
-	go a.collectLoop(a.collector.CollectSystem, false)
+	go a.collectLoop(ctx, a.collector.Collect, true)
+	go a.collectLoop(ctx, a.collector.CollectSystem, false)
 
 	a.wg.Add(a.rateLimit)
 	for i := 0; i < a.rateLimit; i++ {
-		go a.worker()
+		go a.worker(ctx)
 	}
 
 	ticker := time.NewTicker(a.sendInterval)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-a.stop:
+		case <-ctx.Done():
 			close(a.jobs)
 			a.wg.Wait()
 			return
 		case <-ticker.C:
 			gauges, pollCount := a.storage.Snapshot()
-			a.jobs <- sendJob{metrics: a.sender.BuildBatch(gauges, pollCount), pollCount: pollCount}
+			job := sendJob{metrics: a.sender.BuildBatch(gauges, pollCount), pollCount: pollCount}
+			select {
+			case a.jobs <- job:
+			case <-ctx.Done():
+			}
 		}
 	}
 }
 
 func (a *Agent) Stop() {
-	close(a.stop)
+	a.mu.Lock()
+	cancel := a.cancel
+	a.mu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
 	<-a.done
 }

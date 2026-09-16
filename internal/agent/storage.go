@@ -3,7 +3,7 @@ package agent
 import "sync"
 
 type Storage struct {
-	mu        sync.RWMutex
+	mu        sync.Mutex
 	gauges    map[string]float64
 	pollCount int64
 }
@@ -27,8 +27,8 @@ func (s *Storage) AddPollCount() {
 }
 
 func (s *Storage) Snapshot() (map[string]float64, int64) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	out := make(map[string]float64, len(s.gauges))
 	for k, v := range s.gauges {
 		out[k] = v

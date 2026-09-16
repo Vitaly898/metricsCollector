@@ -2,6 +2,7 @@ package agent
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -43,7 +44,7 @@ func TestAgentRunSendsMetrics(t *testing.T) {
 	sender := NewSender(server.URL, "")
 	a := NewAgent(collector, sender, 10*time.Millisecond, 25*time.Millisecond, 2)
 
-	go a.Run()
+	go a.Run(context.Background())
 	time.Sleep(80 * time.Millisecond)
 	a.Stop()
 
@@ -97,7 +98,7 @@ func TestAgentRateLimitCapsConcurrentRequests(t *testing.T) {
 	sender := NewSender(server.URL, "")
 	a := NewAgent(collector, sender, 5*time.Millisecond, 10*time.Millisecond, rateLimit)
 
-	go a.Run()
+	go a.Run(context.Background())
 	time.Sleep(300 * time.Millisecond)
 	a.Stop()
 

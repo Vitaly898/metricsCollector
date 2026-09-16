@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"crypto/hmac"
 	"io"
 	"net/http"
 
@@ -44,26 +45,32 @@ func (w *signWriter) Finish(key string) {
 	_, _ = w.ResponseWriter.Write(w.buf.Bytes())
 }
 
+func methodHasNoBody(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodDelete:
+		return true
+	}
+	return false
+}
+
 func HashMiddleware(key string) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if key == "" {
-				next.ServeHTTP(w, r)
-				return
-			}
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				http.Error(w, "failed to read body", http.StatusBadRequest)
-				return
-			}
-			_ = r.Body.Close()
+			if !methodHasNoBody(r.Method) {
+				body, err := io.ReadAll(r.Body)
+				if err != nil {
+					http.Error(w, "failed to read body", http.StatusBadRequest)
+					return
+				}
+				_ = r.Body.Close()
 
-			r.Body = io.NopCloser(bytes.NewReader(body))
-			received := r.Header.Get(hashHeader)
-			expected := hash.Compute(body, key)
-			if received != expected {
-				http.Error(w, "invalid signature", http.StatusBadRequest)
-				return
+				r.Body = io.NopCloser(bytes.NewReader(body))
+				received := r.Header.Get(hashHeader)
+				expected := hash.Compute(body, key)
+				if !hmac.Equal([]byte(received), []byte(expected)) {
+					http.Error(w, "invalid signature", http.StatusBadRequest)
+					return
+				}
 			}
 			sw := &signWriter{ResponseWriter: w}
 			defer sw.Finish(key)

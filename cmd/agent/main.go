@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/Vitaly898/metricsCollector/internal/agent"
@@ -39,7 +42,10 @@ func main() {
 	}
 	collector := agent.NewCollector()
 	sender := agent.NewSender("http://"+*addr, *key)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	a := agent.NewAgent(collector, sender, time.Duration(*pollInterval)*time.Second, time.Duration(*reportInterval)*time.Second, *rateLimit)
-	a.Run()
+	a.Run(ctx)
 
 }

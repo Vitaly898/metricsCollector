@@ -19,15 +19,6 @@ func okHandler(w http.ResponseWriter, r *http.Request) {
 func TestHashMiddleware(t *testing.T) {
 	const key = "secret"
 
-	t.Run("empty key test", func(t *testing.T) {
-		h := HashMiddleware("")(http.HandlerFunc(okHandler))
-		req := httptest.NewRequest(http.MethodPost, "/updates", nil)
-		rec := httptest.NewRecorder()
-		h.ServeHTTP(rec, req)
-		if rec.Code != http.StatusOK {
-			t.Errorf("got %d, want %d", rec.Code, http.StatusOK)
-		}
-	})
 	t.Run("валидная подпись — 200 и подписанный ответ", func(t *testing.T) {
 		h := HashMiddleware(key)(http.HandlerFunc(okHandler))
 		body := []byte(`[{"id":"a","type":"gauge","value":1}]`)
@@ -70,6 +61,16 @@ func TestHashMiddleware(t *testing.T) {
 		h.ServeHTTP(rec, req)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("got %d, want 400", rec.Code)
+		}
+	})
+
+	t.Run("GET без подписи — 200, верификация пропущена", func(t *testing.T) {
+		h := HashMiddleware(key)(http.HandlerFunc(okHandler))
+		req := httptest.NewRequest(http.MethodGet, "/value/gauge/Alloc", nil)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Errorf("got %d, want 200", rec.Code)
 		}
 	})
 
