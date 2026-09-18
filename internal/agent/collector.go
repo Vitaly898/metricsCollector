@@ -1,52 +1,70 @@
 package agent
 
 import (
+	"fmt"
 	"math/rand"
 	"runtime"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type Collector struct {
-	pollCount int64
 }
 
 func NewCollector() *Collector {
 	return &Collector{}
 }
 
-func (c *Collector) Collect() (map[string]float64, int64) {
-	var mem runtime.MemStats
-	runtime.ReadMemStats(&mem)
-	c.pollCount++
+func (c *Collector) Collect() map[string]float64 {
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
 	gauges := map[string]float64{
-		"Alloc":         float64(mem.Alloc),
-		"BuckHashSys":   float64(mem.BuckHashSys),
-		"Frees":         float64(mem.Frees),
-		"GCCPUFraction": mem.GCCPUFraction,
-		"GCSys":         float64(mem.GCSys),
-		"HeapAlloc":     float64(mem.HeapAlloc),
-		"HeapIdle":      float64(mem.HeapIdle),
-		"HeapInuse":     float64(mem.HeapInuse),
-		"HeapObjects":   float64(mem.HeapObjects),
-		"HeapReleased":  float64(mem.HeapReleased),
-		"HeapSys":       float64(mem.HeapSys),
-		"LastGC":        float64(mem.LastGC),
-		"Lookups":       float64(mem.Lookups),
-		"MCacheInuse":   float64(mem.MCacheInuse),
-		"MCacheSys":     float64(mem.MCacheSys),
-		"MSpanInuse":    float64(mem.MSpanInuse),
-		"MSpanSys":      float64(mem.MSpanSys),
-		"Mallocs":       float64(mem.Mallocs),
-		"NextGC":        float64(mem.NextGC),
-		"NumForcedGC":   float64(mem.NumForcedGC),
-		"NumGC":         float64(mem.NumGC),
-		"OtherSys":      float64(mem.OtherSys),
-		"PauseTotalNs":  float64(mem.PauseTotalNs),
-		"StackInuse":    float64(mem.StackInuse),
-		"StackSys":      float64(mem.StackSys),
-		"Sys":           float64(mem.Sys),
-		"TotalAlloc":    float64(mem.TotalAlloc),
+		"Alloc":         float64(memStats.Alloc),
+		"BuckHashSys":   float64(memStats.BuckHashSys),
+		"Frees":         float64(memStats.Frees),
+		"GCCPUFraction": memStats.GCCPUFraction,
+		"GCSys":         float64(memStats.GCSys),
+		"HeapAlloc":     float64(memStats.HeapAlloc),
+		"HeapIdle":      float64(memStats.HeapIdle),
+		"HeapInuse":     float64(memStats.HeapInuse),
+		"HeapObjects":   float64(memStats.HeapObjects),
+		"HeapReleased":  float64(memStats.HeapReleased),
+		"HeapSys":       float64(memStats.HeapSys),
+		"LastGC":        float64(memStats.LastGC),
+		"Lookups":       float64(memStats.Lookups),
+		"MCacheInuse":   float64(memStats.MCacheInuse),
+		"MCacheSys":     float64(memStats.MCacheSys),
+		"MSpanInuse":    float64(memStats.MSpanInuse),
+		"MSpanSys":      float64(memStats.MSpanSys),
+		"Mallocs":       float64(memStats.Mallocs),
+		"NextGC":        float64(memStats.NextGC),
+		"NumForcedGC":   float64(memStats.NumForcedGC),
+		"NumGC":         float64(memStats.NumGC),
+		"OtherSys":      float64(memStats.OtherSys),
+		"PauseTotalNs":  float64(memStats.PauseTotalNs),
+		"StackInuse":    float64(memStats.StackInuse),
+		"StackSys":      float64(memStats.StackSys),
+		"Sys":           float64(memStats.Sys),
+		"TotalAlloc":    float64(memStats.TotalAlloc),
 		"RandomValue":   rand.Float64(),
 	}
 
-	return gauges, c.pollCount
+	return gauges
+}
+
+func (c *Collector) CollectSystem() map[string]float64 {
+	gauges := make(map[string]float64)
+
+	if vm, err := mem.VirtualMemory(); err == nil {
+		gauges["TotalMemory"] = float64(vm.Total)
+		gauges["FreeMemory"] = float64(vm.Free)
+	}
+
+	if percents, err := cpu.Percent(0, true); err == nil {
+		for i, p := range percents {
+			gauges[fmt.Sprintf("CPUutilization%d", i+1)] = p
+		}
+	}
+	return gauges
 }

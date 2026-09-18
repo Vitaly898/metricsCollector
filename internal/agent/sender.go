@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+
+	"github.com/Vitaly898/metricsCollector/internal/hash"
 
 	"github.com/Vitaly898/metricsCollector/internal/compress"
 	models "github.com/Vitaly898/metricsCollector/internal/model"
@@ -13,12 +16,15 @@ import (
 type Sender struct {
 	baseURL       string
 	client        *http.Client
+	mu            sync.Mutex
 	lastPollCount int64
+	key           string
 }
 
-func NewSender(baseURL string) *Sender {
+func NewSender(baseURL string, key string) *Sender {
 	return &Sender{
 		baseURL: baseURL,
+		key:     key,
 		client: &http.Client{
 			Transport: NewRetryRoundTripper(nil, defaultRetryIntervals),
 		},
@@ -45,6 +51,9 @@ func (s *Sender) trySendMetrics(metrics []models.Metrics) (int, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")
+	if s.key != "" {
+		req.Header.Set("HashSHA256", hash.Compute(body, s.key))
+	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -65,11 +74,13 @@ func (s *Sender) sendMetrics(metrics []models.Metrics) bool {
 	return err == nil && status == http.StatusOK
 }
 
-func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
+func (s *Sender) BuildBatch(gauges map[string]float64, pollCount int64) []models.Metrics {
+	s.mu.Lock()
 	delta := pollCount - s.lastPollCount
 	if delta < 0 {
 		delta = pollCount
 	}
+	s.mu.Unlock()
 
 	metrics := make([]models.Metrics, 0, len(gauges)+1)
 	for metric, val := range gauges {
@@ -87,8 +98,17 @@ func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
 		MType: models.Counter,
 		Delta: &d,
 	})
+	return metrics
+}
 
+func (s *Sender) SendBatch(metrics []models.Metrics, pollCount int64) {
 	if s.sendMetrics(metrics) {
-		s.lastPollCount += delta
+		s.mu.Lock()
+		s.lastPollCount = pollCount
+		s.mu.Unlock()
 	}
+}
+
+func (s *Sender) Send(gauges map[string]float64, pollCount int64) {
+	s.SendBatch(s.BuildBatch(gauges, pollCount), pollCount)
 }

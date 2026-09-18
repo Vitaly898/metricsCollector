@@ -3,11 +3,13 @@ package agent
 import (
 	"compress/gzip"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
 
+	"github.com/Vitaly898/metricsCollector/internal/hash"
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
@@ -65,7 +67,7 @@ func TestSenderSendsBatchRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	sender := NewSender(server.URL)
+	sender := NewSender(server.URL, "")
 	sender.Send(map[string]float64{"Alloc": 123.5}, 7)
 
 	mu.Lock()
@@ -131,7 +133,7 @@ func TestSenderRetriesOnServerError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	sender := NewSender(server.URL)
+	sender := NewSender(server.URL, "")
 	sender.Send(map[string]float64{"Alloc": 42}, 1)
 
 	mu.Lock()
@@ -146,6 +148,54 @@ func TestSenderRetriesOnServerError(t *testing.T) {
 	}
 	if m.Value == nil || *m.Value != 42 {
 		t.Errorf("gauge value = %v, want 42", m.Value)
+	}
+}
+
+func TestSenderSendsHashSHA256Header(t *testing.T) {
+	const key = "secret"
+
+	var mu sync.Mutex
+	var gotHash string
+	var gotBody []byte
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := r.Body
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			gz, err := gzip.NewReader(r.Body)
+			if err != nil {
+				t.Errorf("cannot create gzip reader: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			defer gz.Close()
+			body = gz
+		}
+		raw, err := io.ReadAll(body)
+		if err != nil {
+			t.Errorf("cannot read body: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		mu.Lock()
+		gotBody = raw
+		gotHash = r.Header.Get("HashSHA256")
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	sender := NewSender(server.URL, key)
+	sender.Send(map[string]float64{"Alloc": 42}, 1)
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if gotHash == "" {
+		t.Fatal("HashSHA256 header is missing")
+	}
+	want := hash.Compute(gotBody, key)
+	if gotHash != want {
+		t.Errorf("HashSHA256 = %q, want %q", gotHash, want)
 	}
 }
 
@@ -182,7 +232,7 @@ func TestSenderSendsPollCountDelta(t *testing.T) {
 	}))
 	defer server.Close()
 
-	sender := NewSender(server.URL)
+	sender := NewSender(server.URL, "")
 
 	sender.Send(map[string]float64{"Alloc": 1}, 3)
 	mu.Lock()
@@ -198,7 +248,7 @@ func TestSenderSendsPollCountDelta(t *testing.T) {
 	}
 	mu.Unlock()
 
-	newSender := NewSender(server.URL)
+	newSender := NewSender(server.URL, "")
 	newSender.Send(map[string]float64{"Alloc": 3}, 2)
 	mu.Lock()
 	if totalPollCount != 7 {
