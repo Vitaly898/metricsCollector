@@ -9,10 +9,11 @@ import (
 
 type UpdatesHandler struct {
 	storage MetricsStorage
+	audit   AuditPublisher
 }
 
-func NewUpdatesHandler(s MetricsStorage) *UpdatesHandler {
-	return &UpdatesHandler{storage: s}
+func NewUpdatesHandler(s MetricsStorage, publisher AuditPublisher) *UpdatesHandler {
+	return &UpdatesHandler{storage: s, audit: publisher}
 }
 
 func (h *UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -50,5 +51,12 @@ func (h *UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.audit != nil {
+		names := make([]string, 0, len(metrics))
+		for _, metric := range metrics {
+			names = append(names, metric.ID)
+		}
+		publishAudit(h.audit, r, names)
+	}
 	w.WriteHeader(http.StatusOK)
 }

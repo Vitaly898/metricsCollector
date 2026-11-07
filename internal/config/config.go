@@ -13,6 +13,8 @@ type Config struct {
 	Restore         bool
 	DatabaseDSN     string
 	Key             string
+	AuditFile       string
+	AuditURL        string
 }
 
 func Parse() Config {
@@ -24,6 +26,8 @@ func Parse() Config {
 	fs.StringVar(&cfg.FileStoragePath, "f", "/tmp/metrics-db.json", "path to file for storing metrics")
 	fs.BoolVar(&cfg.Restore, "r", true, "restore metrics from file on startup")
 	fs.StringVar(&cfg.DatabaseDSN, "d", "", "database DSN")
+	fs.StringVar(&cfg.AuditFile, "audit-file", "", "path to audit log file (empty disables file audit)")
+	fs.StringVar(&cfg.AuditURL, "audit-url", "", "audit receiver URL (empty disables HTTP audit)")
 	_ = fs.Parse(os.Args[1:])
 
 	if envAddr, ok := os.LookupEnv("ADDRESS"); ok {
@@ -48,6 +52,12 @@ func Parse() Config {
 	}
 	if envKey, ok := os.LookupEnv("KEY"); ok {
 		cfg.Key = envKey
+	}
+	if envFile, ok := os.LookupEnv("AUDIT_FILE"); ok {
+		cfg.AuditFile = envFile
+	}
+	if envURL, ok := os.LookupEnv("AUDIT_URL"); ok {
+		cfg.AuditURL = envURL
 	}
 
 	return cfg
