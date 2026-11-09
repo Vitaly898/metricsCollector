@@ -11,11 +11,14 @@ import (
 	"time"
 )
 
+// HTTPObserver доставляет события аудита HTTP POST-запросами в формате JSON.
 type HTTPObserver struct {
 	url    string
 	client *http.Client
 }
 
+// NewHTTPObserver создаёт приёмник для полного HTTP или HTTPS URL.
+// Таймаут запроса составляет две секунды; перенаправления не выполняются.
 func NewHTTPObserver(address string) (*HTTPObserver, error) {
 	parsed, err := url.Parse(address)
 	if err != nil {
@@ -36,6 +39,9 @@ func NewHTTPObserver(address string) (*HTTPObserver, error) {
 	}, nil
 }
 
+// Notify отправляет событие и проверяет успешный статус 2xx.
+// Ошибки HTTP-запроса, чтения ответа и статусы вне 2xx возвращаются вызывающему коду.
+// Контекст позволяет отменить запрос или ограничить его длительность.
 func (o *HTTPObserver) Notify(ctx context.Context, event Event) error {
 	body, err := json.Marshal(event)
 	if err != nil {

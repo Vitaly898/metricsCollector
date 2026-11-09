@@ -9,7 +9,10 @@ import (
 	"github.com/Vitaly898/metricsCollector/internal/audit"
 )
 
+// AuditPublisher публикует события успешно обработанных запросов записи метрик.
+// Обработчики допускают nil вместо издателя, чтобы отключить аудит.
 type AuditPublisher interface {
+	// Publish доставляет событие приёмникам аудита и возвращает ошибки доставки.
 	Publish(context.Context, audit.Event) error
 }
 

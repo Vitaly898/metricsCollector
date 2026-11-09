@@ -1,3 +1,4 @@
+// Package agent собирает метрики процесса и системы и отправляет их на сервер.
 package agent
 
 import (
@@ -13,6 +14,8 @@ type sendJob struct {
 	pollCount int64
 }
 
+// Agent управляет периодическим сбором метрик и очередью отправки пакетов.
+// Для экземпляра следует запустить Run один раз.
 type Agent struct {
 	collector    *Collector
 	sender       *Sender
@@ -28,6 +31,9 @@ type Agent struct {
 	cancel context.CancelFunc
 }
 
+// NewAgent создаёт агент с указанными интервалами сбора и отправки.
+// Интервалы должны быть положительными. rateLimit ограничивает число отправителей
+// и размер очереди; значение меньше единицы заменяется единицей.
 func NewAgent(c *Collector, s *Sender, pollInterval, sendInterval time.Duration, rateLimit int) *Agent {
 	if rateLimit < 1 {
 		rateLimit = 1
@@ -76,6 +82,8 @@ func (a *Agent) worker(ctx context.Context) {
 	}
 }
 
+// Run запускает сборщиков и отправителей и блокирует выполнение до отмены ctx
+// или вызова Stop, после чего ожидает завершения рабочих горутин.
 func (a *Agent) Run(ctx context.Context) {
 	defer close(a.done)
 
@@ -112,6 +120,8 @@ func (a *Agent) Run(ctx context.Context) {
 	}
 }
 
+// Stop отменяет работу агента и ожидает завершения Run.
+// Run должен уже выполняться; экземпляр агента не предназначен для перезапуска.
 func (a *Agent) Stop() {
 	a.mu.Lock()
 	cancel := a.cancel

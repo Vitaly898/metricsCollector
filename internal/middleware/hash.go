@@ -1,3 +1,4 @@
+// Package middleware предоставляет обработку gzip и подписей HTTP-сообщений.
 package middleware
 
 import (
@@ -53,6 +54,9 @@ func methodHasNoBody(method string) bool {
 	return false
 }
 
+// HashMiddleware проверяет переданный HashSHA256 и подписывает ответы обработчика ключом key.
+// Отсутствие подписи допускается; неверная переданная подпись приводит к HTTP 400.
+// Для GET, HEAD, OPTIONS и DELETE проверка подписи запроса пропускается.
 func HashMiddleware(key string) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

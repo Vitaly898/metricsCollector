@@ -7,15 +7,20 @@ import (
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
+// UpdatesHandler обслуживает POST /updates/ с JSON-массивом метрик.
 type UpdatesHandler struct {
 	storage MetricsStorage
 	audit   AuditPublisher
 }
 
+// NewUpdatesHandler создаёт обработчик пакетной записи в s; nil publisher отключает аудит.
 func NewUpdatesHandler(s MetricsStorage, publisher AuditPublisher) *UpdatesHandler {
 	return &UpdatesHandler{storage: s, audit: publisher}
 }
 
+// ServeHTTP проверяет все метрики перед вызовом пакетного обновления хранилища.
+// Возвращает HTTP 200 с пустым телом, 400 при неверном пакете или 500 при ошибке записи.
+// После успешной записи публикует одно событие аудита для всего запроса.
 func (h *UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var metrics []models.Metrics
 	if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {

@@ -248,3 +248,38 @@ go build ./cmd/agent ./cmd/server
 без необязательного заголовка `HashSHA256`. Регрессионные тесты проверяют JSON,
 gzip и подпись ответов при включённом ключе. Полный внешний набор автотестов
 не запускался; PostgreSQL в измерения памяти не включён.
+
+## Godoc и примеры эндпоинтов — iter19
+
+Экспортированные типы, интерфейсы, методы, функции, поля и константы описаны
+godoc-комментариями непосредственно в Go-файлах. Просмотр документации:
+
+```sh
+go doc ./internal/handler
+go doc ./internal/handler.UpdateJSONHandler.ServeHTTP
+go doc ./internal/storage.MemStorage
+```
+
+В [internal/handler/example_test.go](internal/handler/example_test.go) находятся
+исполняемые примеры с `// Output:`, оформленные по
+[образцу стандартной библиотеки Go](https://go.dev/src/sort/example_interface_test.go).
+Внешний пакет `handler_test` использует публичный API обработчиков, `httptest`
+и хранилище в памяти; запуск сервера, PostgreSQL или сетевые соединения не требуются.
+
+| Эндпоинт | Пример |
+| --- | --- |
+| `POST /update/{type}/{name}/{value}` | `ExampleUpdateHandler_ServeHTTP` |
+| `POST /update/` | `ExampleUpdateJSONHandler_ServeHTTP` |
+| `POST /updates/` | `ExampleUpdatesHandler_ServeHTTP` |
+| `GET /value/{type}/{name}` | `ExampleValueHandler_ServeHTTP` |
+| `POST /value/` | `ExampleValueJSONHandler_ServeHTTP` |
+| `GET /ping` | `ExamplePingHandler_ServeHTTP` |
+| `GET /` | `ExampleIndexHandler_ServeHTTP` |
+
+Запуск всех семи примеров с проверкой фактического вывода:
+
+```sh
+go test -v ./internal/handler -run '^Example' -count=1
+```
+
+Примеры также выполняются при обычном `go test ./...`.

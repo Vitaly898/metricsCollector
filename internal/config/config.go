@@ -1,3 +1,4 @@
+// Package config читает настройки сервера из флагов и переменных окружения.
 package config
 
 import (
@@ -6,17 +7,29 @@ import (
 	"strconv"
 )
 
+// Config содержит настройки HTTP-сервера, хранения метрик, подписей и аудита.
 type Config struct {
-	Addr            string
-	StoreInterval   int
+	// Addr задаёт адрес прослушивания HTTP: флаг -a, переменная ADDRESS.
+	Addr string
+	// StoreInterval задаёт период сохранения в секундах; 0 включает синхронную запись.
+	// Настраивается через -i и STORE_INTERVAL.
+	StoreInterval int
+	// FileStoragePath задаёт путь к JSON-файлу метрик: -f, FILE_STORAGE_PATH.
 	FileStoragePath string
-	Restore         bool
-	DatabaseDSN     string
-	Key             string
-	AuditFile       string
-	AuditURL        string
+	// Restore включает загрузку метрик из файла при запуске: -r, RESTORE.
+	Restore bool
+	// DatabaseDSN задаёт подключение PostgreSQL: -d, DATABASE_DSN; пустое значение выбирает файл.
+	DatabaseDSN string
+	// Key задаёт ключ HMAC: -k, KEY; пустое значение отключает HashMiddleware.
+	Key string
+	// AuditFile задаёт файл аудита: --audit-file, AUDIT_FILE; пустое значение отключает приёмник.
+	AuditFile string
+	// AuditURL задаёт HTTP-приёмник: --audit-url, AUDIT_URL; пустое значение отключает приёмник.
+	AuditURL string
 }
 
+// Parse разбирает os.Args и затем применяет переменные окружения поверх флагов.
+// Некорректные значения STORE_INTERVAL и RESTORE игнорируются.
 func Parse() Config {
 	var cfg Config
 	fs := flag.NewFlagSet("server", flag.ContinueOnError)

@@ -9,13 +9,16 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
+// Collector собирает метрики Go runtime, памяти системы и загрузки процессоров.
 type Collector struct {
 }
 
+// NewCollector создаёт сборщик метрик.
 func NewCollector() *Collector {
 	return &Collector{}
 }
 
+// Collect возвращает снимок метрик памяти Go runtime и случайную RandomValue.
 func (c *Collector) Collect() map[string]float64 {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -53,6 +56,8 @@ func (c *Collector) Collect() map[string]float64 {
 	return gauges
 }
 
+// CollectSystem возвращает TotalMemory, FreeMemory и CPUutilizationN для логических CPU.
+// Метрики, которые не удалось получить, пропускаются.
 func (c *Collector) CollectSystem() map[string]float64 {
 	gauges := make(map[string]float64)
 
