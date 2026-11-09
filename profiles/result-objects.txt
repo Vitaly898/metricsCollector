@@ -1,0 +1,79 @@
+File: server.test
+Type: alloc_objects
+Time: 2026-11-07 19:29:40 MSK
+Showing nodes accounting for 196015, 95.79% of 204632 total
+Dropped 219 nodes (cum <= 1023)
+      flat  flat%   sum%        cum   cum%
+     65004 31.77% 31.77%      98000 47.89%  encoding/json.(*decodeState).literalStore
+     32996 16.12% 47.89%      32996 16.12%  reflect.unsafe_New
+      9002  4.40% 52.29%      15003  7.33%  crypto/internal/fips140/hmac.New[go.shape.interface { BlockSize int; Reset; Size int; Sum []uint8; Write  }]
+      8000  3.91% 56.20%       8002  3.91%  io.ReadAll
+      7000  3.42% 59.62%       9009  4.40%  net/textproto.MIMEHeader.Set (inline)
+      7000  3.42% 63.04%       7000  3.42%  reflect.growslice
+      6000  2.93% 65.97%       6000  2.93%  crypto/internal/fips140/sha256.New (inline)
+      6000  2.93% 68.91%       6000  2.93%  encoding/base64.(*Encoding).EncodeToString
+      4000  1.95% 70.86%       4000  1.95%  bufio.NewReaderSize (inline)
+      4000  1.95% 72.81%     164025 80.16%  github.com/Vitaly898/metricsCollector/internal/server.New.Logger.func1.1
+      3000  1.47% 74.28%       4004  1.96%  compress/flate.NewReader
+      3000  1.47% 75.75%       3000  1.47%  crypto/internal/fips140/sha256.(*Digest).Sum
+      3000  1.47% 77.21%       3000  1.47%  encoding/json.(*Decoder).refill
+      3000  1.47% 78.68%       3000  1.47%  encoding/json.(*scanner).pushParseState
+      3000  1.47% 80.14%      27003 13.20%  github.com/Vitaly898/metricsCollector/internal/hash.Compute
+      3000  1.47% 81.61%       3000  1.47%  net/http.Header.Clone (inline)
+      3000  1.47% 83.08%       3000  1.47%  net/http/httptest.NewRecorder (inline)
+      3000  1.47% 84.54%       3009  1.47%  net/textproto.canonicalMIMEHeaderKey
+      2999  1.47% 86.01%       2999  1.47%  github.com/Vitaly898/metricsCollector/internal/agent.(*Sender).BuildBatch
+      2006  0.98% 86.99%       2006  0.98%  bytes.growSlice
+      2000  0.98% 87.97%       2000  0.98%  bytes.NewReader (partial-inline)
+      2000  0.98% 88.94%     100000 48.87%  encoding/json.(*decodeState).object
+      2000  0.98% 89.92%       2000  0.98%  io.NopCloser (partial-inline)
+      2000  0.98% 90.90%       2000  0.98%  net/http.(*Request).WithContext (inline)
+      1001  0.49% 91.39%       3007  1.47%  bytes.(*Buffer).grow
+      1001  0.49% 91.88%     115012 56.20%  github.com/Vitaly898/metricsCollector/internal/handler.(*UpdatesHandler).ServeHTTP
+      1001  0.49% 92.37%       8007  3.91%  github.com/Vitaly898/metricsCollector/internal/middleware.newCompressReader
+      1001  0.49% 92.85%     151018 73.80%  github.com/Vitaly898/metricsCollector/internal/server.New.HashMiddleware.func2.1
+      1001  0.49% 93.34%      10041  4.91%  net/http/httptest.NewRequestWithContext
+      1000  0.49% 93.83%       7006  3.42%  compress/gzip.NewReader (inline)
+      1000  0.49% 94.32%       1150  0.56%  encoding/json.Marshal
+      1000  0.49% 94.81%       4084  2.00%  github.com/Vitaly898/metricsCollector/internal/compress.Compress
+      1000  0.49% 95.30%     204373 99.87%  github.com/Vitaly898/metricsCollector/internal/server.(*metricsWorkload).run
+      1000  0.49% 95.79%       4040  1.97%  net/http.readRequest
+         1 0.00049% 95.79%       6006  2.94%  compress/gzip.(*Reader).Reset
+         1 0.00049% 95.79%       4005  1.96%  compress/gzip.(*Reader).readHeader
+         1 0.00049% 95.79%       6001  2.93%  crypto/hmac.New.UnwrapNew[go.shape.interface { BlockSize int; Reset; Size int; Sum []uint8; Write  }].func1
+         0     0% 95.79%       4000  1.95%  bufio.NewReader (inline)
+         0     0% 95.79%       3001  1.47%  bytes.(*Buffer).Write
+         0     0% 95.79%       2003  0.98%  compress/flate.(*Writer).Close (inline)
+         0     0% 95.79%       2003  0.98%  compress/flate.(*compressor).close
+         0     0% 95.79%       2000  0.98%  compress/flate.(*huffmanBitWriter).write (inline)
+         0     0% 95.79%       2003  0.98%  compress/gzip.(*Writer).Close
+         0     0% 95.79%      15003  7.33%  crypto/hmac.New
+         0     0% 95.79%       3000  1.47%  crypto/internal/fips140/hmac.(*HMAC).Sum
+         0     0% 95.79%       6000  2.93%  crypto/sha256.New
+         0     0% 95.79%     113000 55.22%  encoding/json.(*Decoder).Decode
+         0     0% 95.79%       4019  1.96%  encoding/json.(*Decoder).readValue
+         0     0% 95.79%     108000 52.78%  encoding/json.(*decodeState).array
+         0     0% 95.79%       1981  0.97%  encoding/json.(*decodeState).scanWhile
+         0     0% 95.79%     108981 53.26%  encoding/json.(*decodeState).unmarshal
+         0     0% 95.79%     108000 52.78%  encoding/json.(*decodeState).value
+         0     0% 95.79%      32996 16.12%  encoding/json.indirect
+         0     0% 95.79%       3000  1.47%  encoding/json.stateBeginValue
+         0     0% 95.79%       2000  0.98%  encoding/json.stateBeginValueOrEmpty
+         0     0% 95.79%       7006  3.42%  github.com/Vitaly898/metricsCollector/internal/compress.NewReader
+         0     0% 95.79%       3000  1.47%  github.com/Vitaly898/metricsCollector/internal/logger.(*loggingResponseWriter).WriteHeader
+         0     0% 95.79%       3000  1.47%  github.com/Vitaly898/metricsCollector/internal/middleware.(*compressWriter).WriteHeader
+         0     0% 95.79%      15001  7.33%  github.com/Vitaly898/metricsCollector/internal/middleware.(*signWriter).Finish
+         0     0% 95.79%     160025 78.20%  github.com/Vitaly898/metricsCollector/internal/middleware.GzipMiddleware.func1
+         0     0% 95.79%     204528 99.95%  github.com/Vitaly898/metricsCollector/internal/server.TestMemoryProfile
+         0     0% 95.79%     166089 81.16%  github.com/go-chi/chi/v5.(*Mux).ServeHTTP
+         0     0% 95.79%     115013 56.20%  github.com/go-chi/chi/v5.(*Mux).routeHTTP
+         0     0% 95.79%     164025 80.16%  net/http.HandlerFunc.ServeHTTP
+         0     0% 95.79%       9009  4.40%  net/http.Header.Set (inline)
+         0     0% 95.79%       4040  1.97%  net/http.ReadRequest
+         0     0% 95.79%       3000  1.47%  net/http/httptest.(*ResponseRecorder).WriteHeader
+         0     0% 95.79%      10041  4.91%  net/http/httptest.NewRequest (inline)
+         0     0% 95.79%       3009  1.47%  net/textproto.CanonicalMIMEHeaderKey
+         0     0% 95.79%      32996 16.12%  reflect.New
+         0     0% 95.79%       7000  3.42%  reflect.Value.Grow
+         0     0% 95.79%       7000  3.42%  reflect.Value.grow
+         0     0% 95.79%     204552   100%  testing.tRunner

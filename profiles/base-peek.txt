@@ -1,0 +1,18 @@
+File: server.test
+Type: alloc_space
+Time: 2026-11-07 19:16:12 MSK
+Showing nodes accounting for 903162776B, 100% of 903162776B total
+----------------------------------------------------------+-------------
+      flat  flat%   sum%        cum   cum%   calls calls% + context 	 	 
+----------------------------------------------------------+-------------
+                                        806784240B   100% |   compress/gzip.(*Writer).Write (inline)
+663552240B 73.47% 73.47% 806784240B 89.33%                | compress/flate.NewWriter
+                                        143232000B 17.75% |   compress/flate.(*compressor).init
+----------------------------------------------------------+-------------
+                                          5392000B   100% |   github.com/Vitaly898/metricsCollector/internal/server.(*metricsWorkload).run
+  5392000B   0.6% 74.07%   5392000B   0.6%                | github.com/Vitaly898/metricsCollector/internal/agent.(*Sender).BuildBatch
+----------------------------------------------------------+-------------
+                                         45376096B   100% |   github.com/Vitaly898/metricsCollector/internal/compress.NewReader (inline)
+   704000B 0.078% 74.14%  45376096B  5.02%                | compress/gzip.NewReader
+                                         44672096B 98.45% |   compress/gzip.(*Reader).Reset
+----------------------------------------------------------+-------------

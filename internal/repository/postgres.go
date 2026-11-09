@@ -1,3 +1,4 @@
+// Package repository реализует хранение метрик в PostgreSQL и применение миграций.
 package repository
 
 import (
@@ -18,6 +19,8 @@ import (
 
 var retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
+// PostgresStorage хранит метрики в PostgreSQL, повторяя операции при SQL-ошибках
+// классов connection exception и transaction rollback.
 type PostgresStorage struct {
 	db *sql.DB
 }
@@ -49,6 +52,9 @@ func retry(ctx context.Context, fn func() error) error {
 	return err
 }
 
+// NewPostgresStorage проверяет доступность db и применяет встроенные миграции.
+// Ошибки подключения и миграций возвращаются вызывающему коду, который владеет db
+// и отвечает за его закрытие.
 func NewPostgresStorage(db *sql.DB) (*PostgresStorage, error) {
 	ctx := context.TODO()
 	if err := db.PingContext(ctx); err != nil {
@@ -77,10 +83,12 @@ func NewPostgresStorage(db *sql.DB) (*PostgresStorage, error) {
 	return &PostgresStorage{db: db}, nil
 }
 
+// Ping проверяет соединение с PostgreSQL с учётом отмены и срока выполнения ctx.
 func (s *PostgresStorage) Ping(ctx context.Context) error {
 	return s.db.PingContext(ctx)
 }
 
+// UpdateGauge создаёт gauge name или заменяет его значение на val.
 func (s *PostgresStorage) UpdateGauge(name string, val float64) error {
 	ctx := context.TODO()
 
@@ -94,6 +102,7 @@ func (s *PostgresStorage) UpdateGauge(name string, val float64) error {
 	})
 }
 
+// UpdateCounter создаёт counter name или прибавляет val к его текущему значению.
 func (s *PostgresStorage) UpdateCounter(name string, val int64) error {
 	ctx := context.TODO()
 
@@ -107,6 +116,8 @@ func (s *PostgresStorage) UpdateCounter(name string, val int64) error {
 	})
 }
 
+// GetGauge возвращает gauge и признак успешного чтения.
+// false означает отсутствие метрики или ошибку обращения к базе.
 func (s *PostgresStorage) GetGauge(name string) (float64, bool) {
 	ctx := context.TODO()
 
@@ -122,6 +133,8 @@ func (s *PostgresStorage) GetGauge(name string) (float64, bool) {
 	return value.Float64, true
 }
 
+// GetCounter возвращает counter и признак успешного чтения.
+// false означает отсутствие метрики или ошибку обращения к базе.
 func (s *PostgresStorage) GetCounter(name string) (int64, bool) {
 	ctx := context.TODO()
 
@@ -137,6 +150,7 @@ func (s *PostgresStorage) GetCounter(name string) (int64, bool) {
 	return delta.Int64, true
 }
 
+// GetAllGauge возвращает map всех gauge; при ошибке чтения возвращает пустую map.
 func (s *PostgresStorage) GetAllGauge() map[string]float64 {
 	ctx := context.TODO()
 
@@ -173,6 +187,7 @@ func (s *PostgresStorage) GetAllGauge() map[string]float64 {
 	return result
 }
 
+// GetAllCounter возвращает map всех counter; при ошибке чтения возвращает пустую map.
 func (s *PostgresStorage) GetAllCounter() map[string]int64 {
 	ctx := context.TODO()
 
@@ -209,6 +224,8 @@ func (s *PostgresStorage) GetAllCounter() map[string]int64 {
 	return result
 }
 
+// UpdateMetrics применяет пакет в одной транзакции: gauge заменяются, counter суммируются.
+// Ошибка выполнения или фиксации транзакции возвращается вызывающему коду.
 func (s *PostgresStorage) UpdateMetrics(metrics []models.Metrics) error {
 	ctx := context.TODO()
 
