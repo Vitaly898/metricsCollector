@@ -54,13 +54,21 @@ func TestHashMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("заголовок отсутствует — 400", func(t *testing.T) {
+	t.Run("заголовок отсутствует — 200 и подписанный ответ", func(t *testing.T) {
 		h := HashMiddleware(key)(http.HandlerFunc(okHandler))
-		req := httptest.NewRequest(http.MethodPost, "/updates/", nil) // без HashSHA256
+		body := []byte(`[{"id":"a","type":"gauge","value":1}]`)
+		req := httptest.NewRequest(http.MethodPost, "/updates/", bytes.NewReader(body))
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
-		if rec.Code != http.StatusBadRequest {
-			t.Errorf("got %d, want 400", rec.Code)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("got %d, want 200", rec.Code)
+		}
+		wantBody := "echo:" + string(body)
+		if rec.Body.String() != wantBody {
+			t.Errorf("body = %q, want %q", rec.Body.String(), wantBody)
+		}
+		if got, want := rec.Header().Get(hashHeader), hash.Compute([]byte(wantBody), key); got != want {
+			t.Errorf("response hash = %q, want %q", got, want)
 		}
 	})
 

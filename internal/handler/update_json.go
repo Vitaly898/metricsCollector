@@ -9,10 +9,11 @@ import (
 
 type UpdateJSONHandler struct {
 	storage MetricsStorage
+	audit   AuditPublisher
 }
 
-func NewUpdateJSONHandler(s MetricsStorage) *UpdateJSONHandler {
-	return &UpdateJSONHandler{storage: s}
+func NewUpdateJSONHandler(s MetricsStorage, publisher AuditPublisher) *UpdateJSONHandler {
+	return &UpdateJSONHandler{storage: s, audit: publisher}
 }
 
 func (h *UpdateJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +56,7 @@ func (h *UpdateJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	publishAudit(h.audit, r, []string{m.ID})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(m)

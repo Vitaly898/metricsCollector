@@ -83,13 +83,17 @@ func (s *Sender) BuildBatch(gauges map[string]float64, pollCount int64) []models
 	s.mu.Unlock()
 
 	metrics := make([]models.Metrics, 0, len(gauges)+1)
+	// Each metric needs a stable pointer; one backing array replaces a heap object per gauge.
+	values := make([]float64, len(gauges))
+	i := 0
 	for metric, val := range gauges {
-		v := val
+		values[i] = val
 		metrics = append(metrics, models.Metrics{
 			ID:    metric,
 			MType: models.Gauge,
-			Value: &v,
+			Value: &values[i],
 		})
+		i++
 	}
 
 	d := delta

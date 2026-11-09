@@ -5,16 +5,28 @@ on:
   push:
     branches:
       - main
+      - v2
 
 jobs:
 
   branchtest:
     runs-on: ubuntu-latest
+    outputs:
+      iteration: ${{ steps.branch.outputs.iteration }}
 
     steps:
       - name: Check branch name
+        id: branch
         run: |
-          if [[ ! $GITHUB_HEAD_REF =~ ^iter[0-9]+$ ]] && [[ ${{ github.ref }} != "refs/heads/main" ]]; then echo "Branch name must match pattern 'iter<number>' or github.ref must be 'refs/heads/main'" && echo "Your branch is $GITHUB_HEAD_REF and github.ref is ${{ github.ref }}" && exit 1; else echo "Your branch is $GITHUB_HEAD_REF and github.ref is ${{ github.ref }}"; fi
+          branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          iteration=0
+          if [[ "$branch" =~ ^iter([1-9][0-9]*)$ ]]; then
+            iteration="${BASH_REMATCH[1]}"
+          elif [[ "$branch" != "main" && "$branch" != "v2" ]]; then
+            echo "Branch must be iter<number>, main or v2; got $branch"
+            exit 1
+          fi
+          echo "iteration=$iteration" >> "$GITHUB_OUTPUT"
 
   metricstest:
     runs-on: ubuntu-latest
@@ -65,20 +77,8 @@ jobs:
       - name: "Code increment #1"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter1' ||
-          github.head_ref == 'iter2' ||
-          github.head_ref == 'iter3' ||
-          github.head_ref == 'iter4' ||
-          github.head_ref == 'iter5' ||
-          github.head_ref == 'iter6' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 1
         run: |
           metricstest -test.v -test.run=^TestIteration1$ \
             -binary-path=cmd/server/server
@@ -91,19 +91,8 @@ jobs:
       - name: "Code increment #2"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter2' ||
-          github.head_ref == 'iter3' ||
-          github.head_ref == 'iter4' ||
-          github.head_ref == 'iter5' ||
-          github.head_ref == 'iter6' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 2
         run: |
           metricstest -test.v -test.run=^TestIteration2[AB]*$ \
             -source-path=. \
@@ -112,18 +101,8 @@ jobs:
       - name: "Code increment #3"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter3' ||
-          github.head_ref == 'iter4' ||
-          github.head_ref == 'iter5' ||
-          github.head_ref == 'iter6' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 3
         run: |
           metricstest -test.v -test.run=^TestIteration3[AB]*$ \
             -source-path=. \
@@ -133,17 +112,8 @@ jobs:
       - name: "Code increment #4"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter4' ||
-          github.head_ref == 'iter5' ||
-          github.head_ref == 'iter6' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 4
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -157,16 +127,8 @@ jobs:
       - name: "Code increment #5"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter5' ||
-          github.head_ref == 'iter6' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 5
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -180,15 +142,8 @@ jobs:
       - name: "Code increment #6"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter6' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 6
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -202,14 +157,8 @@ jobs:
       - name: "Code increment #7"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter7' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 7
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -223,13 +172,8 @@ jobs:
       - name: "Code increment #8"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter8' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 8
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -243,12 +187,8 @@ jobs:
       - name: "Code increment #9"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter9' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 9
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -263,11 +203,8 @@ jobs:
       - name: "Code increment #10"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter10' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 10
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -282,10 +219,8 @@ jobs:
       - name: "Code increment #11"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter11' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 11
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -300,9 +235,8 @@ jobs:
       - name: "Code increment #12"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter12' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 12
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -317,8 +251,8 @@ jobs:
       - name: "Code increment #13"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter13' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 13
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -333,7 +267,8 @@ jobs:
       - name: "Code increment #14"
         if: |
           github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter14'
+          github.ref == 'refs/heads/v2' ||
+          fromJSON(needs.branchtest.outputs.iteration) >= 14
         run: |
           SERVER_PORT=$(random unused-port)
           ADDRESS="localhost:${SERVER_PORT}"
@@ -346,9 +281,6 @@ jobs:
             -server-port=$SERVER_PORT \
             -source-path=.
 
-      - name: "Code increment #14 (race detection)"
-        if: |
-          github.ref == 'refs/heads/main' ||
-          github.head_ref == 'iter14'
+      - name: Run unit tests with race detection
         run: |
           go test -v -race ./...

@@ -11,10 +11,11 @@ import (
 
 type UpdateHandler struct {
 	storage MetricsStorage
+	audit   AuditPublisher
 }
 
-func NewUpdateHandler(s MetricsStorage) *UpdateHandler {
-	return &UpdateHandler{storage: s}
+func NewUpdateHandler(s MetricsStorage, publisher AuditPublisher) *UpdateHandler {
+	return &UpdateHandler{storage: s, audit: publisher}
 }
 
 func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -54,5 +55,6 @@ func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	publishAudit(h.audit, r, []string{metricName})
 	w.WriteHeader(http.StatusOK)
 }
