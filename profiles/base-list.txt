@@ -1,0 +1,16 @@
+Total: 861.32MB
+ROUTINE ======================== github.com/Vitaly898/metricsCollector/internal/compress.Compress in /Users/vepetrov/pet_projects/study_metrics_collector/metrics_collector/internal/compress/gzip.go
+   46.88kB   776.99MB (flat, cum) 90.21% of Total
+         .          .      9:func Compress(data []byte) ([]byte, error) {
+   46.88kB    46.88kB     10:	var b bytes.Buffer
+         .   156.25kB     11:	w := gzip.NewWriter(&b)
+         .   769.47MB     12:	if _, err := w.Write(data); err != nil {
+         .          .     13:		_ = w.Close()
+         .          .     14:		return nil, err
+         .          .     15:	}
+         .     7.32MB     16:	if err := w.Close(); err != nil {
+         .          .     17:		return nil, err
+         .          .     18:	}
+         .          .     19:	return b.Bytes(), nil
+         .          .     20:}
+         .          .     21:
