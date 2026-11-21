@@ -9,6 +9,7 @@ const (
 )
 
 // Metrics представляет одну gauge- или counter-метрику в JSON-запросах и ответах.
+// generate:reset
 type Metrics struct {
 	// ID содержит имя метрики.
 	ID string `json:"id"`
