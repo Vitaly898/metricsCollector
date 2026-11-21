@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,7 +25,7 @@ import (
 func main() {
 	zapLogger, err := zap.NewProduction()
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to init logger: %v", err)
 	}
 	defer func() { _ = zapLogger.Sync() }()
 
