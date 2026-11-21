@@ -1,0 +1,51 @@
+File: server.test
+Type: alloc_space
+Time: 2026-11-07 19:16:12 MSK
+Showing nodes accounting for 866906.81kB, 98.29% of 881994.90kB total
+Dropped 244 nodes (cum <= 4409.97kB)
+      flat  flat%   sum%        cum   cum%
+648000.23kB 73.47% 73.47% 787875.23kB 89.33%  compress/flate.NewWriter (inline)
+  136000kB 15.42% 88.89%   136000kB 15.42%  compress/flate.(*compressor).initDeflate (inline)
+   32000kB  3.63% 92.52%    32000kB  3.63%  compress/flate.(*dictDecoder).init (inline)
+ 9062.50kB  1.03% 93.55%  9062.50kB  1.03%  reflect.growslice
+ 8187.50kB  0.93% 94.47%  8187.50kB  0.93%  bufio.NewReaderSize (inline)
+ 7531.25kB  0.85% 95.33% 39531.25kB  4.48%  compress/flate.NewReader
+    7125kB  0.81% 96.14%  7125.14kB  0.81%  io.ReadAll
+    6750kB  0.77% 96.90%     6750kB  0.77%  compress/flate.(*huffmanEncoder).generate
+    6000kB  0.68% 97.58%     6000kB  0.68%  encoding/json.(*Decoder).refill
+ 5265.62kB   0.6% 98.18%  5265.62kB   0.6%  github.com/Vitaly898/metricsCollector/internal/agent.(*Sender).BuildBatch
+  687.50kB 0.078% 98.26% 44312.59kB  5.02%  compress/gzip.NewReader (inline)
+   78.17kB 0.0089% 98.26% 26327.65kB  2.99%  github.com/Vitaly898/metricsCollector/internal/server.New.HashMiddleware.func2.1
+   70.31kB 0.008% 98.27% 70765.29kB  8.02%  github.com/Vitaly898/metricsCollector/internal/server.New.Logger.func1.1
+   46.88kB 0.0053% 98.28% 795640.86kB 90.21%  github.com/Vitaly898/metricsCollector/internal/compress.Compress
+   31.30kB 0.0035% 98.28%  5070.17kB  0.57%  net/http/httptest.NewRequestWithContext
+   23.48kB 0.0027% 98.28% 17046.05kB  1.93%  github.com/Vitaly898/metricsCollector/internal/handler.(*UpdatesHandler).ServeHTTP
+   23.48kB 0.0027% 98.29% 44336.08kB  5.03%  github.com/Vitaly898/metricsCollector/internal/middleware.newCompressReader
+   23.44kB 0.0027% 98.29% 881515.27kB 99.95%  github.com/Vitaly898/metricsCollector/internal/server.(*metricsWorkload).run
+    0.09kB 1.1e-05% 98.29% 39531.34kB  4.48%  compress/gzip.(*Reader).readHeader
+    0.05kB 5.3e-06% 98.29% 43625.09kB  4.95%  compress/gzip.(*Reader).Reset
+         0     0% 98.29%  8187.50kB  0.93%  bufio.NewReader (inline)
+         0     0% 98.29%     7500kB  0.85%  compress/flate.(*Writer).Close (inline)
+         0     0% 98.29%     7500kB  0.85%  compress/flate.(*compressor).close
+         0     0% 98.29%     7000kB  0.79%  compress/flate.(*compressor).deflate
+         0     0% 98.29%   139875kB 15.86%  compress/flate.(*compressor).init
+         0     0% 98.29%     7000kB  0.79%  compress/flate.(*compressor).writeBlock
+         0     0% 98.29%     4500kB  0.51%  compress/flate.(*huffmanBitWriter).indexTokens
+         0     0% 98.29%     7000kB  0.79%  compress/flate.(*huffmanBitWriter).writeBlock
+         0     0% 98.29%     7500kB  0.85%  compress/gzip.(*Writer).Close
+         0     0% 98.29% 787937.73kB 89.34%  compress/gzip.(*Writer).Write
+         0     0% 98.29% 16703.12kB  1.89%  encoding/json.(*Decoder).Decode
+         0     0% 98.29%  6022.83kB  0.68%  encoding/json.(*Decoder).readValue
+         0     0% 98.29% 10671.88kB  1.21%  encoding/json.(*decodeState).array
+         0     0% 98.29% 10680.30kB  1.21%  encoding/json.(*decodeState).unmarshal
+         0     0% 98.29% 10671.88kB  1.21%  encoding/json.(*decodeState).value
+         0     0% 98.29% 44312.59kB  5.02%  github.com/Vitaly898/metricsCollector/internal/compress.NewReader
+         0     0% 98.29% 70694.98kB  8.02%  github.com/Vitaly898/metricsCollector/internal/middleware.GzipMiddleware.func1
+         0     0% 98.29% 881526.06kB 99.95%  github.com/Vitaly898/metricsCollector/internal/server.TestMemoryProfile
+         0     0% 98.29% 71190.51kB  8.07%  github.com/go-chi/chi/v5.(*Mux).ServeHTTP
+         0     0% 98.29% 17046.07kB  1.93%  github.com/go-chi/chi/v5.(*Mux).routeHTTP
+         0     0% 98.29% 70765.29kB  8.02%  net/http.HandlerFunc.ServeHTTP
+         0     0% 98.29%  5070.17kB  0.57%  net/http/httptest.NewRequest (inline)
+         0     0% 98.29%  9062.50kB  1.03%  reflect.Value.Grow
+         0     0% 98.29%  9062.50kB  1.03%  reflect.Value.grow
+         0     0% 98.29% 881530.11kB 99.95%  testing.tRunner

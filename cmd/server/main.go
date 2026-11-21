@@ -13,6 +13,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/Vitaly898/metricsCollector/internal/audit"
 	"github.com/Vitaly898/metricsCollector/internal/config"
 	"github.com/Vitaly898/metricsCollector/internal/handler"
 	"github.com/Vitaly898/metricsCollector/internal/repository"
@@ -28,6 +29,31 @@ func main() {
 	defer func() { _ = zapLogger.Sync() }()
 
 	cfg := config.Parse()
+
+	var observers []audit.Observer
+	if cfg.AuditURL != "" {
+		observer, err := audit.NewHTTPObserver(cfg.AuditURL)
+		if err != nil {
+			zapLogger.Fatal("Failed to init HTTP audit", zap.Error(err))
+		}
+		observers = append(observers, observer)
+	}
+	if cfg.AuditFile != "" {
+		observer, err := audit.NewFileObserver(cfg.AuditFile)
+		if err != nil {
+			zapLogger.Fatal("Failed to init file audit", zap.Error(err))
+		}
+		defer func() {
+			if err := observer.Close(); err != nil {
+				zapLogger.Error("Failed to close audit file", zap.Error(err))
+			}
+		}()
+		observers = append(observers, observer)
+	}
+	var publisher handler.AuditPublisher
+	if len(observers) > 0 {
+		publisher = audit.NewPublisher(observers...)
+	}
 
 	var (
 		db    *sql.DB
@@ -55,7 +81,7 @@ func main() {
 		store = fileStorage
 	}
 
-	srv := server.New(cfg, store, zapLogger)
+	srv := server.New(cfg, store, zapLogger, publisher)
 
 	go func() {
 		if err := srv.Run(); err != nil && err != http.ErrServerClosed {

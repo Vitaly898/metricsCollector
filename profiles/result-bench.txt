@@ -1,0 +1,136 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/Vitaly898/metricsCollector/internal/agent
+cpu: Apple M3 Pro
+BenchmarkBuildBatch      	  109026	      2112 ns/op	    5384 B/op	       3 allocs/op
+BenchmarkBuildBatch      	  127222	      1900 ns/op	    5384 B/op	       3 allocs/op
+BenchmarkBuildBatch      	  124405	      1851 ns/op	    5384 B/op	       3 allocs/op
+BenchmarkBuildBatch      	  129386	      1882 ns/op	    5384 B/op	       3 allocs/op
+BenchmarkBuildBatch      	  132734	      1861 ns/op	    5384 B/op	       3 allocs/op
+BenchmarkStorageSnapshot 	  137568	      1783 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkStorageSnapshot 	  137664	      1745 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkStorageSnapshot 	  136177	      1763 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkStorageSnapshot 	  136755	      1766 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkStorageSnapshot 	  140863	      1728 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkCollector       	   16657	     14426 ns/op	     984 B/op	       4 allocs/op
+BenchmarkCollector       	   16576	     14517 ns/op	     984 B/op	       4 allocs/op
+BenchmarkCollector       	   16430	     14802 ns/op	     984 B/op	       4 allocs/op
+BenchmarkCollector       	   16570	     14538 ns/op	     984 B/op	       4 allocs/op
+BenchmarkCollector       	   16525	     14499 ns/op	     984 B/op	       4 allocs/op
+PASS
+ok  	github.com/Vitaly898/metricsCollector/internal/agent	4.081s
+goos: darwin
+goarch: arm64
+pkg: github.com/Vitaly898/metricsCollector/internal/compress
+cpu: Apple M3 Pro
+BenchmarkCompress/1024         	    7038	     29088 ns/op	  35.20 MB/s	     355 B/op	       3 allocs/op
+BenchmarkCompress/1024         	    9632	     26825 ns/op	  38.17 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/1024         	    9271	     27825 ns/op	  36.80 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/1024         	    8439	     26367 ns/op	  38.84 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/1024         	    9536	     25213 ns/op	  40.61 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/4096         	    8252	     29454 ns/op	 139.06 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/4096         	    8311	     29170 ns/op	 140.42 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/4096         	    8182	     29878 ns/op	 137.09 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/4096         	    8217	     30110 ns/op	 136.03 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/4096         	    7902	     29324 ns/op	 139.68 MB/s	     240 B/op	       3 allocs/op
+BenchmarkCompress/65536        	    2089	    123040 ns/op	 532.64 MB/s	     880 B/op	       4 allocs/op
+BenchmarkCompress/65536        	    1917	    123003 ns/op	 532.80 MB/s	     880 B/op	       4 allocs/op
+BenchmarkCompress/65536        	    1858	    125658 ns/op	 521.54 MB/s	     880 B/op	       4 allocs/op
+BenchmarkCompress/65536        	    1893	    125745 ns/op	 521.18 MB/s	     880 B/op	       4 allocs/op
+BenchmarkCompress/65536        	    1920	    125825 ns/op	 520.85 MB/s	     880 B/op	       4 allocs/op
+BenchmarkDecompress            	   44809	      5359 ns/op	 821.04 MB/s	   52368 B/op	      15 allocs/op
+BenchmarkDecompress            	   42290	      5510 ns/op	 798.60 MB/s	   52368 B/op	      15 allocs/op
+BenchmarkDecompress            	   42795	      5641 ns/op	 780.00 MB/s	   52368 B/op	      15 allocs/op
+BenchmarkDecompress            	   43426	      5489 ns/op	 801.66 MB/s	   52368 B/op	      15 allocs/op
+BenchmarkDecompress            	   45224	      5381 ns/op	 817.67 MB/s	   52368 B/op	      15 allocs/op
+PASS
+ok  	github.com/Vitaly898/metricsCollector/internal/compress	5.160s
+goos: darwin
+goarch: arm64
+pkg: github.com/Vitaly898/metricsCollector/internal/hash
+cpu: Apple M3 Pro
+BenchmarkCompute 	  122677	      1888 ns/op	2224.33 MB/s	     624 B/op	       9 allocs/op
+BenchmarkCompute 	  132200	      1742 ns/op	2411.63 MB/s	     624 B/op	       9 allocs/op
+BenchmarkCompute 	  142096	      1689 ns/op	2486.37 MB/s	     624 B/op	       9 allocs/op
+BenchmarkCompute 	  140930	      1691 ns/op	2483.59 MB/s	     624 B/op	       9 allocs/op
+BenchmarkCompute 	  143918	      1686 ns/op	2490.91 MB/s	     624 B/op	       9 allocs/op
+PASS
+ok  	github.com/Vitaly898/metricsCollector/internal/hash	1.494s
+goos: darwin
+goarch: arm64
+pkg: github.com/Vitaly898/metricsCollector/internal/storage
+cpu: Apple M3 Pro
+BenchmarkMemStorage/UpdateGauge         	18428938	        11.86 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateGauge         	22797614	        10.45 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateGauge         	23156335	        10.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateGauge         	22985385	        10.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateGauge         	23140615	        10.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateCounter       	23348667	        10.45 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateCounter       	23566185	        10.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateCounter       	23197930	        10.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateCounter       	23152243	        10.69 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateCounter       	22983919	        10.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/GetGauge            	31241017	         8.061 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/GetGauge            	29591116	         8.268 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/GetGauge            	29929851	         8.135 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/GetGauge            	29232642	         8.088 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/GetGauge            	29812737	         8.047 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateMetrics64     	  393913	       616.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateMetrics64     	  388395	       631.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateMetrics64     	  397780	       628.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateMetrics64     	  376725	       629.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/UpdateMetrics64     	  381426	       635.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMemStorage/Snapshot64          	  134542	      1778 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkMemStorage/Snapshot64          	  135243	      2460 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkMemStorage/Snapshot64          	  113493	      2184 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkMemStorage/Snapshot64          	  105192	      2066 ns/op	    3544 B/op	       4 allocs/op
+BenchmarkMemStorage/Snapshot64          	  125289	      1996 ns/op	    3544 B/op	       4 allocs/op
+PASS
+ok  	github.com/Vitaly898/metricsCollector/internal/storage	6.511s
+goos: darwin
+goarch: arm64
+pkg: github.com/Vitaly898/metricsCollector/internal/server
+cpu: Apple M3 Pro
+BenchmarkMetricsPipeline 	    1765	    130690 ns/op	   89077 B/op	     303 allocs/op
+BenchmarkMetricsPipeline 	    1873	    144024 ns/op	   88605 B/op	     303 allocs/op
+BenchmarkMetricsPipeline 	    1633	    128731 ns/op	   88606 B/op	     303 allocs/op
+BenchmarkMetricsPipeline 	    1946	    125030 ns/op	   88605 B/op	     303 allocs/op
+BenchmarkMetricsPipeline 	    2080	    120370 ns/op	   88604 B/op	     303 allocs/op
+BenchmarkUpdatesHandler  	   59049	      4008 ns/op	    7048 B/op	      39 allocs/op
+BenchmarkUpdatesHandler  	   60488	      3877 ns/op	    7048 B/op	      39 allocs/op
+BenchmarkUpdatesHandler  	   64276	      3657 ns/op	    7048 B/op	      39 allocs/op
+BenchmarkUpdatesHandler  	   71385	      3418 ns/op	    7048 B/op	      39 allocs/op
+BenchmarkUpdatesHandler  	   54750	      4159 ns/op	    7048 B/op	      39 allocs/op
+PASS
+ok  	github.com/Vitaly898/metricsCollector/internal/server	2.973s
+goos: darwin
+goarch: arm64
+pkg: github.com/Vitaly898/metricsCollector/internal/audit
+cpu: Apple M3 Pro
+BenchmarkPublisher/0  	85401654	         2.882 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/0  	82120290	         2.860 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/0  	86733936	         2.778 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/0  	88443949	         2.722 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/0  	87358750	         2.744 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/1  	62778612	         3.878 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/1  	61552270	         3.910 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/1  	61048632	         3.863 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/1  	63114295	         3.803 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/1  	60916272	         3.819 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/2  	36780435	         6.468 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/2  	38089446	         6.166 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/2  	42887140	         5.675 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/2  	42957824	         5.706 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/2  	42812548	         5.754 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/8  	15834223	        15.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/8  	15922245	        15.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/8  	15796272	        15.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/8  	15632760	        15.49 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublisher/8  	15301364	        15.47 ns/op	       0 B/op	       0 allocs/op
+BenchmarkFileObserver 	  163438	      1429 ns/op	      48 B/op	       1 allocs/op
+BenchmarkFileObserver 	  177296	      1544 ns/op	      48 B/op	       1 allocs/op
+BenchmarkFileObserver 	  173756	      1390 ns/op	      48 B/op	       1 allocs/op
+BenchmarkFileObserver 	  178208	      1365 ns/op	      48 B/op	       1 allocs/op
+BenchmarkFileObserver 	  178168	      1366 ns/op	      48 B/op	       1 allocs/op
+PASS
+ok  	github.com/Vitaly898/metricsCollector/internal/audit	6.491s

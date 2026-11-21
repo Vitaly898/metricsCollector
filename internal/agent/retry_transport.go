@@ -12,6 +12,10 @@ type retryRoundTripper struct {
 	intervals []time.Duration
 }
 
+// NewRetryRoundTripper оборачивает next повторами при транспортных ошибках и HTTP 5xx.
+// intervals задаёт паузы между попытками; nil next заменяется http.DefaultTransport.
+// Для повторной отправки тела запроса требуется Request.GetBody.
+// Отмена контекста запроса прерывает ожидание перед следующей попыткой.
 func NewRetryRoundTripper(next http.RoundTripper, intervals []time.Duration) http.RoundTripper {
 	if next == nil {
 		next = http.DefaultTransport

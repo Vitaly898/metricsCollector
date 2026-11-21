@@ -1,3 +1,4 @@
+// Package logger предоставляет middleware структурированного логирования HTTP-запросов.
 package logger
 
 import (
@@ -28,6 +29,8 @@ func (w *loggingResponseWriter) WriteHeader(statusCode int) {
 	w.responseData.status = statusCode
 }
 
+// Logger возвращает middleware, записывающее метод, URI, длительность запроса,
+// HTTP-статус и размер тела ответа после выполнения обработчика.
 func Logger(logger *zap.SugaredLogger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

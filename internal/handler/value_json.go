@@ -7,13 +7,18 @@ import (
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
+// ValueJSONHandler обслуживает POST /value и /value/, возвращая метрику как JSON.
 type ValueJSONHandler struct {
 	storage MetricsStorage
 }
 
+// NewValueJSONHandler создаёт обработчик чтения JSON-метрики из s.
 func NewValueJSONHandler(s MetricsStorage) *ValueJSONHandler {
 	return &ValueJSONHandler{storage: s}
 }
+
+// ServeHTTP принимает JSON с id и type и возвращает HTTP 200 с текущим значением.
+// Неверный JSON или тип приводит к HTTP 400, отсутствие значения — к HTTP 404.
 func (h *ValueJSONHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var m models.Metrics
 

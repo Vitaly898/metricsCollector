@@ -9,14 +9,21 @@ import (
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
+// UpdateHandler обслуживает POST /update/{type}/{name}/{value}.
+// Gauge заменяется новым значением, counter увеличивается на переданное приращение.
 type UpdateHandler struct {
 	storage MetricsStorage
+	audit   AuditPublisher
 }
 
-func NewUpdateHandler(s MetricsStorage) *UpdateHandler {
-	return &UpdateHandler{storage: s}
+// NewUpdateHandler создаёт обработчик записи в s; nil publisher отключает аудит.
+func NewUpdateHandler(s MetricsStorage, publisher AuditPublisher) *UpdateHandler {
+	return &UpdateHandler{storage: s, audit: publisher}
 }
 
+// ServeHTTP читает параметры маршрута chi и обновляет одну метрику.
+// Возвращает HTTP 200 при успехе, 400 при неверном типе или значении,
+// 404 при пустом имени и 500 при ошибке записи. Аудит выполняется после успешной записи.
 func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "type")
 	metricName := chi.URLParam(r, "name")
@@ -54,5 +61,6 @@ func (h *UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	publishAudit(h.audit, r, []string{metricName})
 	w.WriteHeader(http.StatusOK)
 }

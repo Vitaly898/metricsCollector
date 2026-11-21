@@ -7,14 +7,19 @@ import (
 	"strconv"
 )
 
+// ValueHandler обслуживает GET /value/{type}/{name}, возвращая значение как текст.
 type ValueHandler struct {
 	storage MetricsStorage
 }
 
+// NewValueHandler создаёт обработчик чтения текстового значения из s.
 func NewValueHandler(s MetricsStorage) *ValueHandler {
 	return &ValueHandler{storage: s}
 }
 
+// ServeHTTP читает тип и имя из параметров маршрута chi.
+// При успехе возвращает HTTP 200 и text/plain; неизвестный тип или отсутствующая
+// метрика приводят к HTTP 404.
 func (h *ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "type")
 	metricName := chi.URLParam(r, "name")

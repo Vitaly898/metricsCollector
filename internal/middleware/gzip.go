@@ -86,6 +86,8 @@ func shouldCompress(contentType string) bool {
 		strings.HasPrefix(contentType, "text/html")
 }
 
+// GzipMiddleware распаковывает запросы с Content-Encoding: gzip.
+// При Accept-Encoding с gzip сжимает успешные JSON- и HTML-ответы обработчика.
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Encoding") == "gzip" {

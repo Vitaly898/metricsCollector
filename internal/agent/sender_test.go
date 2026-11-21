@@ -256,3 +256,35 @@ func TestSenderSendsPollCountDelta(t *testing.T) {
 	}
 	mu.Unlock()
 }
+
+func TestBuildBatchValuesRemainIndependent(t *testing.T) {
+	sender := NewSender("http://localhost:8080", "")
+	gauges := map[string]float64{"Alloc": 12.5, "Frees": 3}
+	first := sender.BuildBatch(gauges, 7)
+	gauges["Alloc"] = 99
+	second := sender.BuildBatch(gauges, 8)
+	for _, metric := range second {
+		if metric.Value != nil {
+			*metric.Value = -1
+		}
+		if metric.Delta != nil {
+			*metric.Delta = -1
+		}
+	}
+	for _, metric := range first {
+		switch metric.ID {
+		case "Alloc":
+			if metric.Value == nil || *metric.Value != 12.5 {
+				t.Errorf("first Alloc value changed: %v", metric.Value)
+			}
+		case "Frees":
+			if metric.Value == nil || *metric.Value != 3 {
+				t.Errorf("first Frees value changed: %v", metric.Value)
+			}
+		case "PollCount":
+			if metric.Delta == nil || *metric.Delta != 7 {
+				t.Errorf("first PollCount delta changed: %v", metric.Delta)
+			}
+		}
+	}
+}

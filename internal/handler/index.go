@@ -7,10 +7,12 @@ import (
 	"net/http"
 )
 
+// IndexHandler обслуживает GET /, возвращая HTML-список всех метрик.
 type IndexHandler struct {
 	storage MetricsStorage
 }
 
+// NewIndexHandler создаёт обработчик просмотра метрик из s.
 func NewIndexHandler(s MetricsStorage) *IndexHandler {
 	return &IndexHandler{storage: s}
 }
@@ -24,6 +26,9 @@ var indexTmpl = template.Must(template.New("index").Parse(`<html><body><ul>
   {{range .}}<li>{{.Name}}: {{.Value}}</li>
   {{end}}</ul></body></html>`))
 
+// ServeHTTP формирует HTML со всеми gauge и counter.
+// Возвращает HTTP 200 либо HTTP 500 при ошибке формирования страницы.
+// Порядок метрик не определён.
 func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metrics := make([]metric, 0)
 	for name, val := range h.storage.GetAllGauge() {

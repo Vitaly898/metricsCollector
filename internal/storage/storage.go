@@ -1,3 +1,4 @@
+// Package storage предоставляет хранилище метрик в памяти и сохранение в JSON-файл.
 package storage
 
 import (
@@ -7,12 +8,15 @@ import (
 	models "github.com/Vitaly898/metricsCollector/internal/model"
 )
 
+// MemStorage хранит gauge и counter в памяти с защитой от параллельного доступа.
+// Создаётся через NewMemStorage.
 type MemStorage struct {
 	mu      sync.Mutex
 	gauge   map[string]float64
 	counter map[string]int64
 }
 
+// NewMemStorage создаёт пустое хранилище метрик в памяти.
 func NewMemStorage() *MemStorage {
 	return &MemStorage{
 		gauge:   make(map[string]float64),
@@ -25,6 +29,7 @@ func (m *MemStorage) Ping(_ context.Context) error {
 	return nil
 }
 
+// UpdateGauge устанавливает текущее значение gauge name и возвращает nil.
 func (m *MemStorage) UpdateGauge(name string, val float64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -32,6 +37,7 @@ func (m *MemStorage) UpdateGauge(name string, val float64) error {
 	return nil
 }
 
+// UpdateCounter прибавляет val к counter name и возвращает nil.
 func (m *MemStorage) UpdateCounter(name string, val int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -39,6 +45,7 @@ func (m *MemStorage) UpdateCounter(name string, val int64) error {
 	return nil
 }
 
+// GetGauge возвращает значение gauge и признак его наличия.
 func (m *MemStorage) GetGauge(name string) (float64, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -46,6 +53,7 @@ func (m *MemStorage) GetGauge(name string) (float64, bool) {
 	return val, ok
 }
 
+// GetCounter возвращает значение counter и признак его наличия.
 func (m *MemStorage) GetCounter(name string) (int64, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -53,6 +61,7 @@ func (m *MemStorage) GetCounter(name string) (int64, bool) {
 	return val, ok
 }
 
+// GetAllGauge возвращает независимую копию всех gauge-метрик.
 func (m *MemStorage) GetAllGauge() map[string]float64 {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -63,6 +72,7 @@ func (m *MemStorage) GetAllGauge() map[string]float64 {
 	return res
 }
 
+// GetAllCounter возвращает независимую копию всех counter-метрик.
 func (m *MemStorage) GetAllCounter() map[string]int64 {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -73,6 +83,8 @@ func (m *MemStorage) GetAllCounter() map[string]int64 {
 	return res
 }
 
+// UpdateMetrics применяет пакет под одной блокировкой и возвращает nil.
+// Gauge заменяются, counter суммируются; неизвестные типы и nil-значения пропускаются.
 func (m *MemStorage) UpdateMetrics(metrics []models.Metrics) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
