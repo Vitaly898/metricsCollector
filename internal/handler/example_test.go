@@ -16,7 +16,8 @@ import (
 func ExampleUpdateHandler_ServeHTTP() {
 	store := storage.NewMemStorage()
 	if err := store.UpdateCounter("PollCount", 2); err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 	router := chi.NewRouter()
 	router.Post("/update/{type}/{name}/{value}", handler.NewUpdateHandler(store, nil).ServeHTTP)
@@ -83,7 +84,8 @@ func ExampleUpdatesHandler_ServeHTTP() {
 func ExampleValueHandler_ServeHTTP() {
 	store := storage.NewMemStorage()
 	if err := store.UpdateGauge("Alloc", 12.5); err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 	router := chi.NewRouter()
 	router.Get("/value/{type}/{name}", handler.NewValueHandler(store).ServeHTTP)
@@ -106,7 +108,8 @@ func ExampleValueHandler_ServeHTTP() {
 func ExampleValueJSONHandler_ServeHTTP() {
 	store := storage.NewMemStorage()
 	if err := store.UpdateCounter("PollCount", 7); err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 	h := handler.NewValueJSONHandler(store)
 	body := strings.NewReader(`{"id":"PollCount","type":"counter"}`)
@@ -146,7 +149,8 @@ func ExamplePingHandler_ServeHTTP() {
 func ExampleIndexHandler_ServeHTTP() {
 	store := storage.NewMemStorage()
 	if err := store.UpdateGauge("Alloc", 12.5); err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 	h := handler.NewIndexHandler(store)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
