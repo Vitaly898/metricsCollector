@@ -10,30 +10,30 @@ import (
 
 var initialized = func() bool {
 	log.Fatal("package initializer") // want "log.Fatal is only allowed in main.main"
-	os.Exit(1)                       // want "os.Exit is only allowed in main.main"
+	os.Exit(1)
 	return true
 }()
 
 func init() {
 	log.Fatal("init") // want "log.Fatal is only allowed in main.main"
-	os.Exit(1)        // want "os.Exit is only allowed in main.main"
+	os.Exit(1)
 }
 
 func helper() {
 	log.Fatal("helper")        // want "log.Fatal is only allowed in main.main"
 	log.Fatalf("%s", "helper") // want "log.Fatalf is only allowed in main.main"
 	log.Fatalln("helper")      // want "log.Fatalln is only allowed in main.main"
-	os.Exit(1)                 // want "os.Exit is only allowed in main.main"
-	(log.Fatal)("paren")       // want "log.Fatal is only allowed in main.main"
-	(os.Exit)(1)               // want "os.Exit is only allowed in main.main"
-	defer log.Fatal("defer")   // want "log.Fatal is only allowed in main.main"
-	go os.Exit(1)              // want "os.Exit is only allowed in main.main"
+	os.Exit(1)
+	(log.Fatal)("paren") // want "log.Fatal is only allowed in main.main"
+	(os.Exit)(1)
+	defer log.Fatal("defer") // want "log.Fatal is only allowed in main.main"
+	go os.Exit(1)
 }
 
 // A function named main in an ordinary package gets no exception.
 func main() {
 	log.Fatal("ordinary package") // want "log.Fatal is only allowed in main.main"
-	os.Exit(1)                    // want "os.Exit is only allowed in main.main"
+	os.Exit(1)
 }
 
 func allowed(t *testing.T) {

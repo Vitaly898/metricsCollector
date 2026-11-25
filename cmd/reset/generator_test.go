@@ -30,17 +30,30 @@ func testGenerate(t *testing.T, fixture string) {
 	if _, err := os.Stat(filepath.Join(dir, "plain", generatedFile)); !os.IsNotExist(err) {
 		t.Fatalf("unexpected generated file for an unmarked package: %v", err)
 	}
-	cmd := exec.Command("go", "test", "-race", "./...")
-	cmd.Dir = dir
-	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("generated code failed its behavior tests: %v\n%s", err, output)
-	}
+	checkGeneratedCode(t, dir)
 	if err := generate(dir); err != nil {
 		t.Fatalf("second generation: %v", err)
 	}
 	if !bytes.Equal(rootOutput, readFile(t, filepath.Join(dir, generatedFile))) ||
 		!bytes.Equal(childOutput, readFile(t, filepath.Join(dir, "child", generatedFile))) {
 		t.Fatal("repeated generation changed the output")
+	}
+}
+
+func TestGenerateWithShadowedClear(t *testing.T) {
+	dir := fixtureModule(t, "shadowedclear")
+	if err := generate(dir); err != nil {
+		t.Fatal(err)
+	}
+	checkGeneratedCode(t, dir)
+}
+
+func checkGeneratedCode(t *testing.T, dir string) {
+	t.Helper()
+	cmd := exec.Command("go", "test", "-race", "./...")
+	cmd.Dir = dir
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("generated code failed its behavior tests: %v\n%s", err, output)
 	}
 }
 

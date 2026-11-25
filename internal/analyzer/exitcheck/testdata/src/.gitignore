@@ -1,0 +1,3 @@
+# These directories contain package fixtures, not compiled Go test binaries.
+!ordinary.test/
+!testharness.test/

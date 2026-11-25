@@ -1,8 +1,11 @@
-// Command linter forbids builtin panic and restricts process termination to main.main.
+// Command linter runs the project's process termination checks.
 package main
 
-import "golang.org/x/tools/go/analysis/singlechecker"
+import (
+	"github.com/Vitaly898/metricsCollector/internal/analyzer/exitcheck"
+	"golang.org/x/tools/go/analysis/singlechecker"
+)
 
 func main() {
-	singlechecker.Main(Analyzer)
+	singlechecker.Main(exitcheck.Analyzer)
 }

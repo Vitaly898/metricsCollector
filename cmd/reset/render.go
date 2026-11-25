@@ -9,12 +9,13 @@ import (
 )
 
 type renderer struct {
-	pkg     *types.Package
-	imports map[string]*types.Package
-	aliases map[string]string
-	used    map[string]bool
-	body    bytes.Buffer
-	dynamic string
+	pkg          *types.Package
+	imports      map[string]*types.Package
+	aliases      map[string]string
+	used         map[string]bool
+	body         bytes.Buffer
+	dynamic      string
+	clearBuiltin bool
 }
 
 func renderPackage(pkg *types.Package, targets []resetTarget) ([]byte, error) {
@@ -30,6 +31,9 @@ func renderPackage(pkg *types.Package, targets []resetTarget) ([]byte, error) {
 			r.used[target.named.TypeParams().At(i).Obj().Name()] = true
 		}
 	}
+	r.clearBuiltin = !r.used["clear"]
+	// An import generated later must not shadow the builtin in earlier methods.
+	r.used["clear"] = true
 	receiver := r.identifier("rs")
 	for _, target := range targets {
 		var params []string
@@ -110,7 +114,12 @@ func (r *renderer) fieldValue(expr string, fieldType types.Type, active map[type
 	case *types.Slice:
 		fmt.Fprintf(&r.body, "%s = %s[:0]\n", expr, operand(expr))
 	case *types.Map:
-		fmt.Fprintf(&r.body, "clear(%s)\n", expr)
+		if r.clearBuiltin {
+			fmt.Fprintf(&r.body, "clear(%s)\n", expr)
+		} else {
+			reflect := r.qualifier(types.NewPackage("reflect", "reflect"))
+			fmt.Fprintf(&r.body, "%s.ValueOf(&(%s)).Elem().Clear()\n", reflect, expr)
+		}
 	case *types.Pointer:
 		fmt.Fprintf(&r.body, "if %s != nil {\n", expr)
 		if err := r.fieldValue("*"+expr, field.Elem(), active); err != nil {
